@@ -139,11 +139,11 @@ export function FirstResponderView({ patients, onUpdatePatient }: FirstResponder
       {!hasArrived ? (
         <>
           {/* Map Section */}
-          <AmbulanceMap 
+          <AmbulanceMap
             patientName={activePatient.patient_name}
             eta={activePatient.eta_minutes || 12}
             dispatchTime={activePatient.dispatch_time}
-            reverseDirection={false}
+            reverseDirection={true}
             onArrival={handleAmbulanceArrival}
           />
 
