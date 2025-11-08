@@ -75,22 +75,22 @@ const Index = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-transition from Moving to Operation Theatre to In Operation Theatre
+  // Transition to In Operation Theatre when ambulance arrives at hospital
   useEffect(() => {
-    const interval = setInterval(() => {
-      setPatients(prev => 
-        prev.map(patient => {
-          if (patient.status === 'Moving to Operation Theatre') {
-            console.log(`[System]: Patient ${patient.patient_name} is now in operation theatre`);
-            return { ...patient, status: 'In Operation Theatre' as const };
-          }
-          return patient;
-        })
-      );
-    }, 8000); // Wait 8 seconds before entering operation theatre
-
-    return () => clearInterval(interval);
-  }, []);
+    setPatients(prev => 
+      prev.map(patient => {
+        if (patient.has_arrived_at_hospital) {
+          console.log(`[System]: Patient ${patient.patient_name} is now in operation theatre`);
+          return { 
+            ...patient, 
+            status: 'In Operation Theatre' as const,
+            has_arrived_at_hospital: false 
+          };
+        }
+        return patient;
+      })
+    );
+  }, [patients]);
 
   const handlePatientRegistered = (patient: Patient) => {
     setPatients(prev => [...prev, patient]);
