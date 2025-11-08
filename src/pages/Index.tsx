@@ -77,20 +77,24 @@ const Index = () => {
 
   // Transition to In Operation Theatre when ambulance arrives at hospital
   useEffect(() => {
-    setPatients(prev => 
-      prev.map(patient => {
-        if (patient.has_arrived_at_hospital) {
-          console.log(`[System]: Patient ${patient.patient_name} is now in operation theatre`);
-          return { 
-            ...patient, 
-            status: 'In Operation Theatre' as const,
-            has_arrived_at_hospital: false 
-          };
-        }
-        return patient;
-      })
-    );
-  }, [patients]);
+    const hasArrivedPatients = patients.filter(p => p.has_arrived_at_hospital);
+    
+    if (hasArrivedPatients.length > 0) {
+      setPatients(prev => 
+        prev.map(patient => {
+          if (patient.has_arrived_at_hospital) {
+            console.log(`[System]: Patient ${patient.patient_name} is now in operation theatre`);
+            return { 
+              ...patient, 
+              status: 'In Operation Theatre' as const,
+              has_arrived_at_hospital: false 
+            };
+          }
+          return patient;
+        })
+      );
+    }
+  }, [patients.map(p => p.has_arrived_at_hospital).join(',')]);
 
   const handlePatientRegistered = (patient: Patient) => {
     setPatients(prev => [...prev, patient]);
