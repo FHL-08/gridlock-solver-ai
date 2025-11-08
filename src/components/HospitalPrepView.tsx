@@ -62,6 +62,7 @@ const useRemainingTime = (eta: number, dispatchTime?: number) => {
 };
 
 export function HospitalPrepView({ patients, onUpdatePatient }: HospitalPrepViewProps) {
+  // Filter high-severity patients that haven't reached operation theatre yet
   const highSeverityPatients = patients.filter(
     p => p.severity >= 8 && 
     (p.status === 'Ambulance Dispatched' || p.status === 'In Transit' || p.status === 'Prep Ready' || p.status === 'Moving to Operation Theatre' || p.status === 'Arrived')
@@ -69,14 +70,24 @@ export function HospitalPrepView({ patients, onUpdatePatient }: HospitalPrepView
 
   const handleHospitalArrival = (patient: Patient) => {
     if (patient.status === 'Moving to Operation Theatre' && onUpdatePatient && !patient.has_arrived_at_hospital) {
+      // First, set status to 'Arrived' to show the ARRIVED message
       const arrivedPatient: Patient = {
         ...patient,
         status: 'Arrived',
-        eta_minutes: 0,
-        has_arrived_at_hospital: true
+        eta_minutes: 0
       };
       onUpdatePatient(arrivedPatient);
-      console.log(`[System]: Ambulance arrived at hospital with ${patient.patient_name} (has_arrived_at_hospital flag set)`);
+      console.log(`[System]: Ambulance arrived at hospital with ${patient.patient_name} - showing ARRIVED status`);
+      
+      // After 3 seconds, set the has_arrived_at_hospital flag to trigger transition to Operation Theatre
+      setTimeout(() => {
+        const transitionPatient: Patient = {
+          ...arrivedPatient,
+          has_arrived_at_hospital: true
+        };
+        onUpdatePatient(transitionPatient);
+        console.log(`[System]: Transitioning ${patient.patient_name} to Operation Theatre (has_arrived_at_hospital flag set)`);
+      }, 3000);
     }
   };
 
