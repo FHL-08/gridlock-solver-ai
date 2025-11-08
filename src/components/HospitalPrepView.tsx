@@ -17,6 +17,7 @@ import { AmbulanceMap } from '@/components/AmbulanceMap';
 
 interface HospitalPrepViewProps {
   patients: Patient[];
+  onUpdatePatient?: (patient: Patient) => void;
 }
 
 // Helper function to format time as HH:MM:SS or MM:SS
@@ -60,11 +61,23 @@ const useRemainingTime = (eta: number, dispatchTime?: number) => {
   return remainingSeconds;
 };
 
-export function HospitalPrepView({ patients }: HospitalPrepViewProps) {
+export function HospitalPrepView({ patients, onUpdatePatient }: HospitalPrepViewProps) {
   const highSeverityPatients = patients.filter(
     p => p.severity >= 8 && 
-    (p.status === 'Ambulance Dispatched' || p.status === 'In Transit' || p.status === 'Prep Ready' || p.status === 'Arrived')
+    (p.status === 'Ambulance Dispatched' || p.status === 'In Transit' || p.status === 'Prep Ready' || p.status === 'Moving to Operation Theatre' || p.status === 'Arrived')
   );
+
+  const handleHospitalArrival = (patient: Patient) => {
+    if (patient.status === 'Moving to Operation Theatre' && onUpdatePatient) {
+      const arrivedPatient: Patient = {
+        ...patient,
+        status: 'Arrived',
+        eta_minutes: 0
+      };
+      onUpdatePatient(arrivedPatient);
+      console.log(`[System]: Ambulance arrived at hospital with ${patient.patient_name}`);
+    }
+  };
 
   const getSeverityColor = (severity: number) => {
     if (severity >= 8) return 'bg-critical text-critical-foreground';
@@ -112,12 +125,13 @@ export function HospitalPrepView({ patients }: HospitalPrepViewProps) {
                   <AlertDescription>
                     <div className="space-y-6">
                     {/* Real-time Ambulance Tracking */}
-                    {(patient.status === 'Ambulance Dispatched' || patient.status === 'In Transit' || patient.status === 'Prep Ready' || patient.status === 'Arrived') && patient.eta_minutes && patient.eta_minutes > 0 && (
+                    {patient.status === 'Moving to Operation Theatre' && patient.eta_minutes && patient.eta_minutes > 0 && (
                       <div className="mb-4">
                         <AmbulanceMap 
                           patientName={patient.patient_name} 
                           eta={patient.eta_minutes}
                           dispatchTime={patient.dispatch_time}
+                          onArrival={() => handleHospitalArrival(patient)}
                         />
                       </div>
                     )}

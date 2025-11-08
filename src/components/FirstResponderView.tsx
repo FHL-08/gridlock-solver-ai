@@ -24,13 +24,15 @@ export function FirstResponderView({ patients, onUpdatePatient }: FirstResponder
   const [symptomUpdate, setSymptomUpdate] = useState('');
   const [actionsTaken, setActionsTaken] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [isAtPatientLocation, setIsAtPatientLocation] = useState(false);
+  const [isSending, setIsSending] = useState(false);
 
   // Get the first patient that's either dispatched, in transit, or arrived
   const activePatient = patients.find(
     p => p.status === 'Ambulance Dispatched' || p.status === 'In Transit' || p.status === 'Prep Ready' || p.status === 'Arrived'
   );
 
-  const hasArrived = activePatient?.status === 'Arrived' || (activePatient?.eta_minutes === 0 && activePatient.status !== 'Ambulance Dispatched');
+  const hasArrived = isAtPatientLocation;
 
   if (!activePatient) {
     return (
@@ -58,6 +60,8 @@ export function FirstResponderView({ patients, onUpdatePatient }: FirstResponder
 
   const handleSendUpdate = async () => {
     if (!activePatient || !updateText) return;
+    
+    setIsSending(true);
 
     // Combine all update information
     const fullUpdateText = `Symptoms: ${symptomUpdate || activePatient.symptom_description}. Actions taken: ${actionsTaken}. Additional notes: ${updateText}`;
@@ -113,18 +117,15 @@ export function FirstResponderView({ patients, onUpdatePatient }: FirstResponder
     setSymptomUpdate('');
     setActionsTaken('');
     setDialogOpen(false);
+    setIsAtPatientLocation(false);
+    setIsSending(false);
   };
 
   const patientContext = `Patient symptoms: ${activePatient.symptom_description}. Severity: ${activePatient.severity}. Triage notes: ${activePatient.triage_notes}`;
 
   const handleAmbulanceArrival = () => {
-    if (activePatient && activePatient.status !== 'Arrived') {
-      const arrivedPatient: Patient = {
-        ...activePatient,
-        status: 'Arrived',
-        eta_minutes: 0
-      };
-      onUpdatePatient(arrivedPatient);
+    if (activePatient && !isAtPatientLocation) {
+      setIsAtPatientLocation(true);
       console.log(`[EMSAgent]: Ambulance arrived at patient location for ${activePatient.patient_name}`);
     }
   };
@@ -323,9 +324,16 @@ export function FirstResponderView({ patients, onUpdatePatient }: FirstResponder
                 <Button 
                   onClick={handleSendUpdate} 
                   className="w-full"
-                  disabled={!updateText || !actionsTaken}
+                  disabled={!updateText || !actionsTaken || isSending}
                 >
-                  Send Update to Hospital & Clinician
+                  {isSending ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2" />
+                      Processing...
+                    </>
+                  ) : (
+                    'Send Update to Hospital & Clinician'
+                  )}
                 </Button>
                 <p className="text-xs text-center text-muted-foreground">
                   {activePatient.severity >= 8 

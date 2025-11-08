@@ -17,33 +17,7 @@ const Index = () => {
     console.log('[System]: Agents: TriageAgent, EMSAgent, OpsAgent, ClinicianAgent');
   }, []);
 
-  // Auto-update patient status based on progress
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setPatients(prev => 
-        prev.map(patient => {
-          // Skip if no dispatch time or already in operation
-          if (!patient.dispatch_time || patient.status === 'In Operation Theatre' || patient.status === 'Moving to Operation Theatre') {
-            return patient;
-          }
-
-          const elapsed = Date.now() - patient.dispatch_time;
-          const totalDuration = (patient.eta_minutes || 0) * 60 * 1000;
-          const progress = (elapsed / totalDuration) * 100;
-
-          // Transition from In Transit/Prep Ready to Arrived when 100%
-          if (progress >= 100 && (patient.status === 'In Transit' || patient.status === 'Prep Ready')) {
-            console.log(`[System]: Patient ${patient.patient_name} has ARRIVED`);
-            return { ...patient, status: 'Arrived' as const, eta_minutes: 0 };
-          }
-
-          return patient;
-        })
-      );
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
+  // No automatic arrival - handled by respective views
 
   // Note: Transition from Arrived to Moving to Operation Theatre now happens
   // when first responder submits their assessment in FirstResponderView
@@ -172,7 +146,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="preparation" className="space-y-4">
-            <HospitalPrepView patients={patients} />
+            <HospitalPrepView patients={patients} onUpdatePatient={handleUpdatePatient} />
           </TabsContent>
 
           <TabsContent value="clinician" className="space-y-4">
