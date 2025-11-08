@@ -62,6 +62,40 @@ const Index = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Auto-transition from Ambulance Dispatched to Prep Ready
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPatients(prev => 
+        prev.map(patient => {
+          if (patient.status === 'Ambulance Dispatched' && patient.resource_plan) {
+            console.log(`[System]: Hospital preparation ready for ${patient.patient_name}`);
+            return { ...patient, status: 'Prep Ready' as const };
+          }
+          return patient;
+        })
+      );
+    }, 3000); // Wait 3 seconds for preparation
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Auto-transition from Prep Ready to In Transit
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPatients(prev => 
+        prev.map(patient => {
+          if (patient.status === 'Prep Ready' && patient.dispatch_time) {
+            console.log(`[System]: Ambulance with ${patient.patient_name} is now in transit`);
+            return { ...patient, status: 'In Transit' as const };
+          }
+          return patient;
+        })
+      );
+    }, 2000); // Wait 2 seconds before in transit
+
+    return () => clearInterval(interval);
+  }, []);
+
   // Auto-transition from Moving to Operation Theatre to In Operation Theatre
   useEffect(() => {
     const interval = setInterval(() => {
@@ -87,8 +121,8 @@ const Index = () => {
     setPatients(prev =>
       prev.map(p => {
         if (p.queue_id === updatedPatient.queue_id) {
-          // Set dispatch time when status changes to In Transit
-          if (updatedPatient.status === 'In Transit' && !updatedPatient.dispatch_time) {
+          // Set dispatch time when ambulance is dispatched
+          if (updatedPatient.status === 'Ambulance Dispatched' && !updatedPatient.dispatch_time) {
             return { ...updatedPatient, dispatch_time: Date.now() };
           }
           return updatedPatient;

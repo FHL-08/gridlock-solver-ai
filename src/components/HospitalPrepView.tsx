@@ -1,3 +1,4 @@
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -18,15 +19,57 @@ interface HospitalPrepViewProps {
   patients: Patient[];
 }
 
+// Helper function to format time as HH:MM:SS or MM:SS
+const formatTime = (totalSeconds: number): string => {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = Math.floor(totalSeconds % 60);
+  
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+};
+
+const useRemainingTime = (eta: number, dispatchTime?: number) => {
+  const [remainingSeconds, setRemainingSeconds] = React.useState(eta * 60);
+  
+  React.useEffect(() => {
+    if (!dispatchTime) {
+      return;
+    }
+
+    const totalDuration = eta * 60 * 1000;
+    const initialElapsed = Date.now() - dispatchTime;
+    const initialRemainingMs = Math.max(totalDuration - initialElapsed, 0);
+    setRemainingSeconds(initialRemainingMs / 1000);
+    
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - dispatchTime;
+      const remainingMs = Math.max(totalDuration - elapsed, 0);
+      setRemainingSeconds(remainingMs / 1000);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [eta, dispatchTime]);
+  
+  return remainingSeconds;
+};
+
 export function HospitalPrepView({ patients }: HospitalPrepViewProps) {
   const highSeverityPatients = patients.filter(
     p => p.severity >= 8 && 
-    (p.status === 'In Transit' || p.status === 'Prep Ready' || p.status === 'Arrived')
+    (p.status === 'Ambulance Dispatched' || p.status === 'In Transit' || p.status === 'Prep Ready' || p.status === 'Arrived')
   );
 
   const getSeverityColor = (severity: number) => {
     if (severity >= 8) return 'bg-critical text-critical-foreground';
     return 'bg-warning text-warning-foreground';
+  };
+
+  const getStatusDisplay = (status: string) => {
+    if (status === 'Ambulance Dispatched') return 'Starting Preparation';
+    return status;
   };
 
   return (
@@ -56,13 +99,16 @@ export function HospitalPrepView({ patients }: HospitalPrepViewProps) {
               </p>
             </div>
           ) : (
-            highSeverityPatients.map(patient => (
-              <Alert key={patient.queue_id} className="border-critical bg-critical/5">
-                <Ambulance className="h-5 w-5 text-critical" />
-                <AlertDescription>
-                  <div className="space-y-6">
+            highSeverityPatients.map(patient => {
+              const remainingSeconds = useRemainingTime(patient.eta_minutes || 0, patient.dispatch_time);
+              
+              return (
+                <Alert key={patient.queue_id} className="border-critical bg-critical/5">
+                  <Ambulance className="h-5 w-5 text-critical" />
+                  <AlertDescription>
+                    <div className="space-y-6">
                     {/* Real-time Ambulance Tracking */}
-                    {(patient.status === 'In Transit' || patient.status === 'Prep Ready' || patient.status === 'Arrived') && patient.eta_minutes && (
+                    {(patient.status === 'Ambulance Dispatched' || patient.status === 'In Transit' || patient.status === 'Prep Ready' || patient.status === 'Arrived') && patient.eta_minutes && patient.eta_minutes > 0 && (
                       <div className="mb-4">
                         <AmbulanceMap 
                           patientName={patient.patient_name} 
@@ -91,14 +137,14 @@ export function HospitalPrepView({ patients }: HospitalPrepViewProps) {
                         <Clock className="h-5 w-5 text-critical" />
                         <div>
                           <p className="text-xs text-muted-foreground">ETA</p>
-                          <p className="font-bold text-foreground">{patient.eta_minutes} mins</p>
+                          <p className="font-bold text-foreground">{formatTime(remainingSeconds)}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2 p-3 bg-card rounded-md">
                         <Navigation className="h-5 w-5 text-primary" />
                         <div>
                           <p className="text-xs text-muted-foreground">Status</p>
-                          <p className="font-bold text-foreground">{patient.status}</p>
+                          <p className="font-bold text-foreground">{getStatusDisplay(patient.status)}</p>
                         </div>
                       </div>
                     </div>
@@ -222,7 +268,8 @@ export function HospitalPrepView({ patients }: HospitalPrepViewProps) {
                   </div>
                 </AlertDescription>
               </Alert>
-            ))
+              );
+            })
           )}
         </CardContent>
       </Card>

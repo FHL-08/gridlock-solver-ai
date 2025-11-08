@@ -8,16 +8,28 @@ interface AmbulanceMapProps {
   dispatchTime?: number;
 }
 
+// Helper function to format time as HH:MM:SS or MM:SS
+const formatTime = (totalSeconds: number): string => {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = Math.floor(totalSeconds % 60);
+  
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+};
+
 export function AmbulanceMap({ patientName, eta, dispatchTime }: AmbulanceMapProps) {
   const [progress, setProgress] = useState(0);
-  const [currentEta, setCurrentEta] = useState(eta);
+  const [remainingSeconds, setRemainingSeconds] = useState(eta * 60);
 
   useEffect(() => {
     if (!dispatchTime) {
       // Fallback to simple animation if no dispatch time
       const interval = setInterval(() => {
         setProgress((prev) => Math.min(prev + 1, 100));
-        setCurrentEta((prev) => Math.max(prev - 0.1, 0));
+        setRemainingSeconds((prev) => Math.max(prev - 0.5, 0));
       }, 500);
       return () => clearInterval(interval);
     }
@@ -29,19 +41,19 @@ export function AmbulanceMap({ patientName, eta, dispatchTime }: AmbulanceMapPro
     const initialElapsed = Date.now() - dispatchTime;
     const initialProgress = Math.min((initialElapsed / totalDuration) * 100, 100);
     const initialRemainingMs = Math.max(totalDuration - initialElapsed, 0);
-    const initialRemainingMinutes = Math.ceil(initialRemainingMs / 60000);
+    const initialRemainingSeconds = initialRemainingMs / 1000;
     
     setProgress(initialProgress);
-    setCurrentEta(initialRemainingMinutes);
+    setRemainingSeconds(initialRemainingSeconds);
     
     const interval = setInterval(() => {
       const elapsed = Date.now() - dispatchTime;
       const newProgress = Math.min((elapsed / totalDuration) * 100, 100);
       const remainingMs = Math.max(totalDuration - elapsed, 0);
-      const remainingMinutes = Math.ceil(remainingMs / 60000);
+      const newRemainingSeconds = remainingMs / 1000;
       
       setProgress(newProgress);
-      setCurrentEta(remainingMinutes);
+      setRemainingSeconds(newRemainingSeconds);
     }, 1000);
 
     return () => clearInterval(interval);
@@ -197,7 +209,7 @@ export function AmbulanceMap({ patientName, eta, dispatchTime }: AmbulanceMapPro
                 <Clock className="h-5 w-5 text-critical" />
                 <div>
                   <p className="text-xs text-muted-foreground">ETA</p>
-                  <p className="text-xl font-bold text-critical">{currentEta} min</p>
+                  <p className="text-xl font-bold text-critical">{formatTime(remainingSeconds)}</p>
                 </div>
               </div>
             </div>
