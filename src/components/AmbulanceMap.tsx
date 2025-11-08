@@ -17,12 +17,22 @@ export function AmbulanceMap({ patientName, eta, dispatchTime }: AmbulanceMapPro
       // Fallback to simple animation if no dispatch time
       const interval = setInterval(() => {
         setProgress((prev) => Math.min(prev + 1, 100));
+        setCurrentEta((prev) => Math.max(prev - 0.1, 0));
       }, 500);
       return () => clearInterval(interval);
     }
 
-    // Calculate progress based on elapsed time
+    // Calculate progress based on elapsed time since dispatch
     const totalDuration = eta * 60 * 1000; // Convert minutes to milliseconds
+    
+    // Set initial state based on elapsed time
+    const initialElapsed = Date.now() - dispatchTime;
+    const initialProgress = Math.min((initialElapsed / totalDuration) * 100, 100);
+    const initialRemainingMs = Math.max(totalDuration - initialElapsed, 0);
+    const initialRemainingMinutes = Math.ceil(initialRemainingMs / 60000);
+    
+    setProgress(initialProgress);
+    setCurrentEta(initialRemainingMinutes);
     
     const interval = setInterval(() => {
       const elapsed = Date.now() - dispatchTime;
@@ -43,9 +53,9 @@ export function AmbulanceMap({ patientName, eta, dispatchTime }: AmbulanceMapPro
 
   return (
     <Card className="overflow-hidden border-2 border-critical/20">
-      <div className="relative h-80 bg-gradient-to-br from-primary/5 via-background to-accent/5">
+      <div className="relative w-full aspect-video bg-gradient-to-br from-primary/5 via-background to-accent/5">
         {/* Street grid background */}
-        <svg className="absolute inset-0 w-full h-full opacity-20" style={{ zIndex: 0 }}>
+        <svg className="absolute inset-0 w-full h-full opacity-20" style={{ zIndex: 0 }} preserveAspectRatio="none">
           <defs>
             <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
               <path d="M 40 0 L 0 0 0 40" fill="none" stroke="hsl(var(--muted-foreground))" strokeWidth="0.5"/>
@@ -55,8 +65,8 @@ export function AmbulanceMap({ patientName, eta, dispatchTime }: AmbulanceMapPro
         </svg>
 
         {/* Map content */}
-        <div className="absolute inset-0 p-6" style={{ zIndex: 1 }}>
-          <svg className="absolute inset-0 w-full h-full">
+        <div className="absolute inset-0 p-4 md:p-6" style={{ zIndex: 1 }}>
+          <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid meet" viewBox="0 0 800 400">
             <defs>
               {/* Animated route gradient */}
               <linearGradient id="routeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -80,15 +90,15 @@ export function AmbulanceMap({ patientName, eta, dispatchTime }: AmbulanceMapPro
             <path
               d="M 50 300 Q 200 250, 300 220 Q 400 190, 500 160 Q 600 130, 700 100"
               stroke="url(#routeGradient)"
-              strokeWidth="6"
+              strokeWidth="8"
               fill="none"
               strokeLinecap="round"
               strokeDasharray="15,10"
             />
             
             {/* Waypoint markers */}
-            <circle cx="300" cy="220" r="4" fill="hsl(var(--primary))" opacity="0.6" />
-            <circle cx="500" cy="160" r="4" fill="hsl(var(--primary))" opacity="0.6" />
+            <circle cx="300" cy="220" r="6" fill="hsl(var(--primary))" opacity="0.6" />
+            <circle cx="500" cy="160" r="6" fill="hsl(var(--primary))" opacity="0.6" />
           </svg>
 
           {/* Ambulance (moving) */}
