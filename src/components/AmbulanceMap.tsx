@@ -1,7 +1,4 @@
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet';
-import { Icon, DivIcon, LatLngExpression } from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 import { Card } from '@/components/ui/card';
 import { Navigation, Clock, MapPin, Radio } from 'lucide-react';
 
@@ -25,16 +22,9 @@ const formatTime = (totalSeconds: number): string => {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 };
 
-// Default coordinates - can be replaced with actual location data
-const DEFAULT_PATIENT_COORDS: LatLngExpression = [51.505, -0.09]; // Example: London
-const DEFAULT_HOSPITAL_COORDS: LatLngExpression = [51.515, -0.1];
-
 export function AmbulanceMap({ patientName, eta, dispatchTime, reverseDirection = false, onArrival }: AmbulanceMapProps) {
   const [progress, setProgress] = useState(0);
   const [hasArrived, setHasArrived] = useState(false);
-  const [currentPosition, setCurrentPosition] = useState<LatLngExpression>(
-    reverseDirection ? DEFAULT_HOSPITAL_COORDS : DEFAULT_PATIENT_COORDS
-  );
 
   useEffect(() => {
     if (!dispatchTime) {
@@ -80,153 +70,221 @@ export function AmbulanceMap({ patientName, eta, dispatchTime, reverseDirection 
     }
   }, [progress, hasArrived, onArrival]);
 
-  // Interpolate between start and end coordinates
-  useEffect(() => {
-    const startCoords = reverseDirection ? DEFAULT_HOSPITAL_COORDS : DEFAULT_PATIENT_COORDS;
-    const endCoords = reverseDirection ? DEFAULT_PATIENT_COORDS : DEFAULT_HOSPITAL_COORDS;
-    
-    const t = progress / 100;
-    const lat = (startCoords as number[])[0] + ((endCoords as number[])[0] - (startCoords as number[])[0]) * t;
-    const lng = (startCoords as number[])[1] + ((endCoords as number[])[1] - (startCoords as number[])[1]) * t;
-    
-    setCurrentPosition([lat, lng]);
-  }, [progress, reverseDirection]);
-
-  // Create route path
-  const routePath: LatLngExpression[] = reverseDirection 
-    ? [DEFAULT_HOSPITAL_COORDS, DEFAULT_PATIENT_COORDS]
-    : [DEFAULT_PATIENT_COORDS, DEFAULT_HOSPITAL_COORDS];
-
-  // Create custom icons using DivIcon for better styling
-  const createCustomIcon = (color: string, icon: string) => {
-    return new DivIcon({
-      html: `
-        <div style="
-          background: ${color};
-          border-radius: 50%;
-          width: 40px;
-          height: 40px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-          border: 3px solid white;
-        ">
-          ${icon}
-        </div>
-      `,
-      className: 'custom-marker',
-      iconSize: [40, 40],
-      iconAnchor: [20, 20],
-    });
+  // Calculate ambulance position along the bezier curve path
+  const getPointOnPath = (t: number, reverse: boolean) => {
+    // Bezier path segments
+    if (reverse) {
+      // M 700 100 Q 600 130, 500 160 Q 400 190, 300 220 Q 200 250, 50 300
+      if (t <= 0.33) {
+        const segT = t / 0.33;
+        return {
+          x: (1-segT)*(1-segT)*700 + 2*(1-segT)*segT*600 + segT*segT*500,
+          y: (1-segT)*(1-segT)*100 + 2*(1-segT)*segT*130 + segT*segT*160
+        };
+      } else if (t <= 0.66) {
+        const segT = (t - 0.33) / 0.33;
+        return {
+          x: (1-segT)*(1-segT)*500 + 2*(1-segT)*segT*400 + segT*segT*300,
+          y: (1-segT)*(1-segT)*160 + 2*(1-segT)*segT*190 + segT*segT*220
+        };
+      } else {
+        const segT = (t - 0.66) / 0.34;
+        return {
+          x: (1-segT)*(1-segT)*300 + 2*(1-segT)*segT*200 + segT*segT*50,
+          y: (1-segT)*(1-segT)*220 + 2*(1-segT)*segT*250 + segT*segT*300
+        };
+      }
+    } else {
+      // M 50 300 Q 200 250, 300 220 Q 400 190, 500 160 Q 600 130, 700 100
+      if (t <= 0.33) {
+        const segT = t / 0.33;
+        return {
+          x: (1-segT)*(1-segT)*50 + 2*(1-segT)*segT*200 + segT*segT*300,
+          y: (1-segT)*(1-segT)*300 + 2*(1-segT)*segT*250 + segT*segT*220
+        };
+      } else if (t <= 0.66) {
+        const segT = (t - 0.33) / 0.33;
+        return {
+          x: (1-segT)*(1-segT)*300 + 2*(1-segT)*segT*400 + segT*segT*500,
+          y: (1-segT)*(1-segT)*220 + 2*(1-segT)*segT*190 + segT*segT*160
+        };
+      } else {
+        const segT = (t - 0.66) / 0.34;
+        return {
+          x: (1-segT)*(1-segT)*500 + 2*(1-segT)*segT*600 + segT*segT*700,
+          y: (1-segT)*(1-segT)*160 + 2*(1-segT)*segT*130 + segT*segT*100
+        };
+      }
+    }
   };
 
-  const ambulanceIcon = createCustomIcon('hsl(var(--critical))', `
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-      <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
-    </svg>
-  `);
-
-  const hospitalIcon = createCustomIcon('hsl(var(--success))', `
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-      <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/>
-    </svg>
-  `);
-
-  const patientIcon = createCustomIcon('hsl(var(--primary))', `
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-    </svg>
-  `);
-
-  // Calculate center point for map
-  const centerLat = ((DEFAULT_PATIENT_COORDS as number[])[0] + (DEFAULT_HOSPITAL_COORDS as number[])[0]) / 2;
-  const centerLng = ((DEFAULT_PATIENT_COORDS as number[])[1] + (DEFAULT_HOSPITAL_COORDS as number[])[1]) / 2;
+  const pathPoint = getPointOnPath(progress / 100, reverseDirection);
+  const ambulanceX = (pathPoint.x / 800) * 100; // Convert to percentage of viewBox
+  const ambulanceY = (pathPoint.y / 400) * 100; // Convert to percentage of viewBox
 
   return (
     <Card className="overflow-hidden border-2 border-critical/20">
-      <div className="relative w-full aspect-video bg-background">
-        {/* Map Container */}
-        <MapContainer
-          center={[centerLat, centerLng]}
-          zoom={14}
-          style={{ height: '100%', width: '100%' }}
-          zoomControl={false}
-          dragging={true}
-          scrollWheelZoom={false}
-        >
-          {/* OpenStreetMap Tiles */}
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          />
+      <div className="relative w-full aspect-video bg-gradient-to-br from-primary/5 via-background to-accent/5">
+        {/* Street grid background */}
+        <svg className="absolute inset-0 w-full h-full opacity-20" style={{ zIndex: 0 }} preserveAspectRatio="none">
+          <defs>
+            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="hsl(var(--muted-foreground))" strokeWidth="0.5"/>
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#grid)" />
+        </svg>
 
-          {/* Route Path */}
-          <Polyline
-            positions={routePath}
-            pathOptions={{
-              color: 'hsl(var(--primary))',
-              weight: 4,
-              opacity: 0.7,
-              dashArray: '10, 10',
+        {/* Map content */}
+        <div className="absolute inset-0 p-4 md:p-6" style={{ zIndex: 1 }}>
+          <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid meet" viewBox="0 0 800 400">
+            <defs>
+              {/* Animated route gradient */}
+              <linearGradient id="routeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.3" />
+                <stop offset={`${progress}%`} stopColor="hsl(var(--primary))" stopOpacity="1" />
+                <stop offset={`${progress}%`} stopColor="hsl(var(--muted-foreground))" stopOpacity="0.5" />
+                <stop offset="100%" stopColor="hsl(var(--muted-foreground))" stopOpacity="0.3" />
+              </linearGradient>
+              
+              {/* Glow filter for ambulance */}
+              <filter id="glow">
+                <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                <feMerge>
+                  <feMergeNode in="coloredBlur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+            
+            {/* Route path */}
+            <path
+              d={reverseDirection 
+                ? "M 700 100 Q 600 130, 500 160 Q 400 190, 300 220 Q 200 250, 50 300"
+                : "M 50 300 Q 200 250, 300 220 Q 400 190, 500 160 Q 600 130, 700 100"
+              }
+              stroke="url(#routeGradient)"
+              strokeWidth="8"
+              fill="none"
+              strokeLinecap="round"
+              strokeDasharray="15,10"
+            />
+            
+            {/* Waypoint markers */}
+            <circle cx="300" cy="220" r="6" fill="hsl(var(--primary))" opacity="0.6" />
+            <circle cx="500" cy="160" r="6" fill="hsl(var(--primary))" opacity="0.6" />
+          </svg>
+
+          {/* Ambulance (moving) */}
+          <div 
+            className="absolute transition-all duration-500 ease-linear" 
+            style={{ 
+              left: `${ambulanceX}%`, 
+              top: `${ambulanceY}%`,
+              transform: 'translate(-50%, -50%)',
+              zIndex: 10,
             }}
-          />
-
-          {/* Patient Location Marker */}
-          <Marker
-            position={DEFAULT_PATIENT_COORDS}
-            icon={patientIcon}
           >
-            <Popup>
-              <div className="text-center">
-                <p className="font-bold">{patientName}</p>
-                <p className="text-xs text-muted-foreground">Patient Location</p>
-              </div>
-            </Popup>
-          </Marker>
-
-          {/* Hospital Location Marker */}
-          <Marker
-            position={DEFAULT_HOSPITAL_COORDS}
-            icon={hospitalIcon}
-          >
-            <Popup>
-              <div className="text-center">
-                <p className="font-bold">City Hospital</p>
-                <p className="text-xs text-muted-foreground">Emergency Bay A</p>
-              </div>
-            </Popup>
-          </Marker>
-
-          {/* Ambulance Marker */}
-          <Marker
-            position={currentPosition}
-            icon={ambulanceIcon}
-          >
-            <Popup>
-              <div className="text-center">
-                <p className="font-bold">Ambulance</p>
-                <p className="text-xs text-muted-foreground">En Route</p>
-              </div>
-            </Popup>
-          </Marker>
-        </MapContainer>
-
-        {/* Distance indicator */}
-        <div className="absolute top-6 left-6 bg-background/90 backdrop-blur-sm px-4 py-3 rounded-lg border border-border shadow-lg z-[1000]">
-          <div className="flex items-center gap-3">
-            <div className="bg-primary/10 p-2 rounded-full">
-              <Navigation className="h-5 w-5 text-primary" />
+            {/* Pulse rings */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="absolute w-20 h-20 bg-critical/30 rounded-full animate-ping" />
+              <div className="absolute w-16 h-16 bg-critical/40 rounded-full animate-pulse" />
             </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Distance Remaining</p>
-              <p className="text-lg font-bold text-foreground">{remainingDistance.toFixed(1)} km</p>
+            
+            {/* Ambulance icon */}
+            <div className="relative bg-critical text-critical-foreground rounded-full p-4 shadow-2xl border-4 border-critical-foreground/20">
+              <Navigation className="h-8 w-8" style={{ transform: 'rotate(45deg)' }} />
+              
+              {/* Speed indicator */}
+              <div className="absolute -top-2 -right-2 bg-background border-2 border-critical rounded-full p-1">
+                <Radio className="h-3 w-3 text-critical animate-pulse" />
+              </div>
+            </div>
+            
+            {/* Ambulance label */}
+            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 whitespace-nowrap">
+              <div className="bg-background/95 backdrop-blur-sm px-3 py-1 rounded-full border border-critical/30 shadow-lg">
+                <p className="text-xs font-semibold text-foreground">En Route</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Start point - Hospital or Patient depending on direction */}
+          <div className="absolute" style={reverseDirection ? { right: '8%', top: '15%' } : { left: '5%', bottom: '20%' }}>
+            <div className="relative">
+              {/* Glow effect */}
+              <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl w-16 h-16 -translate-x-1/4 -translate-y-1/4" />
+              
+              {/* Icon */}
+              <div className="relative bg-primary text-primary-foreground rounded-full p-5 shadow-2xl border-4 border-primary-foreground/20">
+                <MapPin className="h-9 w-9" />
+              </div>
+              
+              {/* Label */}
+              <div className="absolute top-full mt-3 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                <div className="bg-primary/10 backdrop-blur-sm px-4 py-2 rounded-lg border border-primary/40 shadow-lg">
+                  {reverseDirection ? (
+                    <>
+                      <p className="text-sm font-bold text-primary">City Hospital</p>
+                      <p className="text-xs text-muted-foreground">Emergency Bay A</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm font-bold text-primary">{patientName}</p>
+                      <p className="text-xs text-muted-foreground">Patient Location</p>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* End point - Patient or Hospital depending on direction */}
+          <div className="absolute" style={reverseDirection ? { left: '5%', bottom: '20%' } : { right: '8%', top: '15%' }}>
+            <div className="relative">
+              {/* Glow effect */}
+              <div className="absolute inset-0 bg-success/20 rounded-full blur-xl w-16 h-16 -translate-x-1/4 -translate-y-1/4" />
+              
+              {/* Icon */}
+              <div className="relative bg-success text-success-foreground rounded-full p-5 shadow-2xl border-4 border-success-foreground/20">
+                <MapPin className="h-9 w-9" />
+              </div>
+              
+              {/* Label */}
+              <div className="absolute top-full mt-3 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                <div className="bg-success/10 backdrop-blur-sm px-4 py-2 rounded-lg border border-success/40 shadow-lg">
+                  {reverseDirection ? (
+                    <>
+                      <p className="text-sm font-bold text-success">{patientName}</p>
+                      <p className="text-xs text-muted-foreground">Patient Location</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm font-bold text-success">City Hospital</p>
+                      <p className="text-xs text-muted-foreground">Emergency Bay A</p>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Distance indicator */}
+          <div className="absolute top-6 left-6 bg-background/90 backdrop-blur-sm px-4 py-3 rounded-lg border border-border shadow-lg">
+            <div className="flex items-center gap-3">
+              <div className="bg-primary/10 p-2 rounded-full">
+                <Navigation className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Distance Remaining</p>
+                <p className="text-lg font-bold text-foreground">{remainingDistance.toFixed(1)} km</p>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Info Overlay */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background via-background/98 to-transparent p-4 border-t border-border/50 z-[1000]">
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background via-background/98 to-transparent p-4 border-t border-border/50" style={{ zIndex: 2 }}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="bg-critical/10 p-2 rounded-full">
