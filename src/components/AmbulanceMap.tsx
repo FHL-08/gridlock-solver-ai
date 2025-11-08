@@ -1,23 +1,6 @@
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Navigation, Clock, MapPin } from 'lucide-react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-
-// Fix for default marker icons in Leaflet
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-
-let DefaultIcon = L.icon({
-  iconUrl: icon,
-  shadowUrl: iconShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-});
-
-L.Marker.prototype.options.icon = DefaultIcon;
+import { Navigation, Clock, MapPin, Radio } from 'lucide-react';
 
 interface AmbulanceMapProps {
   patientName: string;
@@ -26,70 +9,6 @@ interface AmbulanceMapProps {
 
 export function AmbulanceMap({ patientName, eta }: AmbulanceMapProps) {
   const [progress, setProgress] = useState(0);
-  
-  // Hospital location (destination)
-  const hospitalLocation: [number, number] = [51.5074, -0.1278];
-  
-  // Calculate ambulance starting position (simulate coming from southwest)
-  const startLocation: [number, number] = [51.4874, -0.1578];
-  
-  // Create route path with waypoints
-  const routePath: [number, number][] = [
-    startLocation,
-    [51.4924, -0.1478],
-    [51.4974, -0.1378],
-    [51.5024, -0.1328],
-    hospitalLocation,
-  ];
-
-  // Calculate current ambulance position based on progress
-  const getCurrentPosition = (): [number, number] => {
-    const segmentCount = routePath.length - 1;
-    const progressIndex = Math.min(Math.floor((progress / 100) * segmentCount), segmentCount - 1);
-    const segmentProgress = ((progress / 100) * segmentCount) % 1;
-    
-    const start = routePath[progressIndex];
-    const end = routePath[progressIndex + 1] || routePath[progressIndex];
-    
-    const lat = start[0] + (end[0] - start[0]) * segmentProgress;
-    const lng = start[1] + (end[1] - start[1]) * segmentProgress;
-    
-    return [lat, lng];
-  };
-
-  const currentPosition = getCurrentPosition();
-
-  // Custom ambulance icon
-  const ambulanceIcon = L.divIcon({
-    className: 'custom-ambulance-icon',
-    html: `
-      <div style="position: relative;">
-        <div style="position: absolute; inset: 0; background: hsl(var(--critical)); border-radius: 50%; animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite; opacity: 0.75; width: 40px; height: 40px;"></div>
-        <div style="position: relative; background: hsl(var(--critical)); color: hsl(var(--critical-foreground)); border-radius: 50%; padding: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); display: flex; align-items: center; justify-content: center; width: 40px; height: 40px;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg);">
-            <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
-          </svg>
-        </div>
-      </div>
-    `,
-    iconSize: [40, 40],
-    iconAnchor: [20, 20],
-  });
-
-  // Custom hospital icon
-  const hospitalIcon = L.divIcon({
-    className: 'custom-hospital-icon',
-    html: `
-      <div style="background: hsl(var(--success)); color: hsl(var(--success-foreground)); border-radius: 50%; padding: 12px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); display: flex; align-items: center; justify-content: center;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>
-          <circle cx="12" cy="10" r="3"></circle>
-        </svg>
-      </div>
-    `,
-    iconSize: [52, 52],
-    iconAnchor: [26, 52],
-  });
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -102,79 +21,175 @@ export function AmbulanceMap({ patientName, eta }: AmbulanceMapProps) {
     return () => clearInterval(interval);
   }, []);
 
+  // Calculate ambulance position along the route
+  const ambulanceX = 10 + (progress * 0.8);
+  const ambulanceY = 70 - (progress * 0.4);
+
   return (
-    <Card className="overflow-hidden">
-      <div className="relative h-64">
-        <MapContainer
-          center={[51.4974, -0.1428] as [number, number]}
-          zoom={13}
-          style={{ height: '100%', width: '100%' }}
-          zoomControl={false}
-          attributionControl={false}
-        >
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          
-          {/* Route path */}
-          <Polyline
-            positions={routePath}
-            pathOptions={{
-              color: 'hsl(var(--primary))',
-              weight: 4,
-              opacity: 0.7,
-              dashArray: '10, 10',
+    <Card className="overflow-hidden border-2 border-critical/20">
+      <div className="relative h-80 bg-gradient-to-br from-primary/5 via-background to-accent/5">
+        {/* Street grid background */}
+        <svg className="absolute inset-0 w-full h-full opacity-20" style={{ zIndex: 0 }}>
+          <defs>
+            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="hsl(var(--muted-foreground))" strokeWidth="0.5"/>
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#grid)" />
+        </svg>
+
+        {/* Map content */}
+        <div className="absolute inset-0 p-6" style={{ zIndex: 1 }}>
+          <svg className="absolute inset-0 w-full h-full">
+            <defs>
+              {/* Animated route gradient */}
+              <linearGradient id="routeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.3" />
+                <stop offset={`${progress}%`} stopColor="hsl(var(--primary))" stopOpacity="1" />
+                <stop offset={`${progress}%`} stopColor="hsl(var(--muted-foreground))" stopOpacity="0.5" />
+                <stop offset="100%" stopColor="hsl(var(--muted-foreground))" stopOpacity="0.3" />
+              </linearGradient>
+              
+              {/* Glow filter for ambulance */}
+              <filter id="glow">
+                <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                <feMerge>
+                  <feMergeNode in="coloredBlur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+            
+            {/* Route path */}
+            <path
+              d="M 50 300 Q 200 250, 300 220 Q 400 190, 500 160 Q 600 130, 700 100"
+              stroke="url(#routeGradient)"
+              strokeWidth="6"
+              fill="none"
+              strokeLinecap="round"
+              strokeDasharray="15,10"
+            />
+            
+            {/* Waypoint markers */}
+            <circle cx="300" cy="220" r="4" fill="hsl(var(--primary))" opacity="0.6" />
+            <circle cx="500" cy="160" r="4" fill="hsl(var(--primary))" opacity="0.6" />
+          </svg>
+
+          {/* Ambulance (moving) */}
+          <div 
+            className="absolute transition-all duration-500 ease-linear" 
+            style={{ 
+              left: `${ambulanceX}%`, 
+              top: `${ambulanceY}%`,
+              transform: 'translate(-50%, -50%)',
             }}
-          />
-          
-          {/* Completed route path */}
-          <Polyline
-            positions={routePath.slice(0, Math.ceil((progress / 100) * routePath.length))}
-            pathOptions={{
-              color: 'hsl(var(--primary))',
-              weight: 4,
-              opacity: 1,
-            }}
-          />
-          
-          {/* Ambulance marker */}
-          <Marker position={currentPosition} icon={ambulanceIcon as any}>
-            <Popup>
-              <div className="text-sm">
-                <p className="font-semibold">{patientName}</p>
-                <p className="text-muted-foreground">En route</p>
+          >
+            {/* Pulse rings */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="absolute w-20 h-20 bg-critical/30 rounded-full animate-ping" />
+              <div className="absolute w-16 h-16 bg-critical/40 rounded-full animate-pulse" />
+            </div>
+            
+            {/* Ambulance icon */}
+            <div className="relative bg-critical text-critical-foreground rounded-full p-4 shadow-2xl border-4 border-critical-foreground/20">
+              <Navigation className="h-8 w-8" style={{ transform: 'rotate(45deg)' }} />
+              
+              {/* Speed indicator */}
+              <div className="absolute -top-2 -right-2 bg-background border-2 border-critical rounded-full p-1">
+                <Radio className="h-3 w-3 text-critical animate-pulse" />
               </div>
-            </Popup>
-          </Marker>
-          
-          {/* Hospital marker */}
-          <Marker position={hospitalLocation} icon={hospitalIcon as any}>
-            <Popup>
-              <div className="text-sm">
-                <p className="font-semibold">Hospital</p>
-                <p className="text-muted-foreground">Destination</p>
+            </div>
+            
+            {/* Patient label */}
+            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 whitespace-nowrap">
+              <div className="bg-background/95 backdrop-blur-sm px-3 py-1 rounded-full border border-critical/30 shadow-lg">
+                <p className="text-xs font-semibold text-foreground">{patientName}</p>
               </div>
-            </Popup>
-          </Marker>
-        </MapContainer>
+            </div>
+          </div>
+
+          {/* Hospital (destination) */}
+          <div className="absolute" style={{ right: '8%', top: '15%' }}>
+            <div className="relative">
+              {/* Glow effect */}
+              <div className="absolute inset-0 bg-success/20 rounded-full blur-xl w-16 h-16 -translate-x-1/4 -translate-y-1/4" />
+              
+              {/* Hospital icon */}
+              <div className="relative bg-success text-success-foreground rounded-full p-5 shadow-2xl border-4 border-success-foreground/20">
+                <MapPin className="h-9 w-9" />
+              </div>
+              
+              {/* Hospital label */}
+              <div className="absolute top-full mt-3 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                <div className="bg-success/10 backdrop-blur-sm px-4 py-2 rounded-lg border border-success/40 shadow-lg">
+                  <p className="text-sm font-bold text-success">City Hospital</p>
+                  <p className="text-xs text-muted-foreground">Emergency Bay A</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Distance indicator */}
+          <div className="absolute top-6 left-6 bg-background/90 backdrop-blur-sm px-4 py-3 rounded-lg border border-border shadow-lg">
+            <div className="flex items-center gap-3">
+              <div className="bg-primary/10 p-2 rounded-full">
+                <Navigation className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Distance Remaining</p>
+                <p className="text-lg font-bold text-foreground">{((100 - progress) * 0.045).toFixed(1)} km</p>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Info Overlay */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background via-background/95 to-transparent p-4 pointer-events-none">
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background via-background/98 to-transparent p-4 border-t border-border/50" style={{ zIndex: 2 }}>
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Navigation className="h-5 w-5 text-critical animate-pulse" />
+            <div className="flex items-center gap-3">
+              <div className="bg-critical/10 p-2 rounded-full">
+                <Navigation className="h-5 w-5 text-critical animate-pulse" />
+              </div>
               <div>
-                <p className="font-semibold text-foreground">{patientName}</p>
-                <p className="text-xs text-muted-foreground">En route to hospital</p>
+                <p className="font-bold text-foreground">{patientName}</p>
+                <p className="text-xs text-muted-foreground">Emergency Transport - Code Red</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 bg-critical/10 px-3 py-2 rounded-lg">
-              <Clock className="h-4 w-4 text-critical" />
-              <div>
-                <p className="text-xs text-muted-foreground">ETA</p>
-                <p className="font-bold text-critical">{eta} min</p>
+            
+            <div className="flex items-center gap-4">
+              {/* Live indicator */}
+              <div className="flex items-center gap-2 px-3 py-2 bg-critical/10 rounded-lg">
+                <div className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-critical opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-critical"></span>
+                </div>
+                <span className="text-xs font-semibold text-critical">LIVE</span>
+              </div>
+              
+              {/* ETA */}
+              <div className="flex items-center gap-2 bg-critical/10 px-4 py-2 rounded-lg border border-critical/20">
+                <Clock className="h-5 w-5 text-critical" />
+                <div>
+                  <p className="text-xs text-muted-foreground">ETA</p>
+                  <p className="text-xl font-bold text-critical">{eta} min</p>
+                </div>
               </div>
             </div>
+          </div>
+          
+          {/* Progress bar */}
+          <div className="mt-3 w-full bg-muted/50 rounded-full h-2 overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-primary via-critical to-success transition-all duration-500 ease-linear relative"
+              style={{ width: `${progress}%` }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse" />
+            </div>
+          </div>
+          <div className="flex justify-between mt-1 text-xs text-muted-foreground">
+            <span>Dispatched</span>
+            <span>{progress}% Complete</span>
+            <span>Arriving</span>
           </div>
         </div>
       </div>

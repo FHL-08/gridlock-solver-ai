@@ -133,22 +133,3 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
-
-/* Leaflet map styles */
-.leaflet-container {
-  font-family: inherit;
-  z-index: 0;
-}
-
-.custom-ambulance-icon,
-.custom-hospital-icon {
-  background: transparent !important;
-  border: none !important;
-}
-
-@keyframes ping {
-  75%, 100% {
-    transform: scale(2);
-    opacity: 0;
-  }
-}
