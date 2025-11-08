@@ -139,14 +139,6 @@ export function AmbulanceMap({ patientName, eta, dispatchTime, reverseDirection 
         <div className="absolute inset-0 p-4 md:p-6" style={{ zIndex: 1 }}>
           <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid meet" viewBox="0 0 800 400">
             <defs>
-              {/* Animated route gradient */}
-              <linearGradient id="routeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.3" />
-                <stop offset={`${progress}%`} stopColor="hsl(var(--primary))" stopOpacity="1" />
-                <stop offset={`${progress}%`} stopColor="hsl(var(--muted-foreground))" stopOpacity="0.5" />
-                <stop offset="100%" stopColor="hsl(var(--muted-foreground))" stopOpacity="0.3" />
-              </linearGradient>
-              
               {/* Glow filter for ambulance */}
               <filter id="glow">
                 <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
@@ -157,17 +149,33 @@ export function AmbulanceMap({ patientName, eta, dispatchTime, reverseDirection 
               </filter>
             </defs>
             
-            {/* Route path */}
+            {/* Route path - Base (remaining/undriven portion) */}
             <path
               d={reverseDirection 
                 ? "M 700 100 Q 600 130, 500 160 Q 400 190, 300 220 Q 200 250, 50 300"
                 : "M 50 300 Q 200 250, 300 220 Q 400 190, 500 160 Q 600 130, 700 100"
               }
-              stroke="url(#routeGradient)"
+              stroke="hsl(var(--muted-foreground))"
+              strokeOpacity="0.3"
               strokeWidth="8"
               fill="none"
               strokeLinecap="round"
               strokeDasharray="15,10"
+            />
+            
+            {/* Route path - Traveled portion (uses dashoffset to reveal progressively) */}
+            <path
+              d={reverseDirection 
+                ? "M 700 100 Q 600 130, 500 160 Q 400 190, 300 220 Q 200 250, 50 300"
+                : "M 50 300 Q 200 250, 300 220 Q 400 190, 500 160 Q 600 130, 700 100"
+              }
+              stroke="hsl(var(--primary))"
+              strokeWidth="8"
+              fill="none"
+              strokeLinecap="round"
+              strokeDasharray="15,10"
+              strokeDashoffset={`${(100 - progress) * 8}px`}
+              className="transition-all duration-500 ease-linear"
             />
             
             {/* Waypoint markers */}
