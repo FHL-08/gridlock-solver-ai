@@ -14,9 +14,9 @@ serve(async (req) => {
   try {
     const { symptoms, videoFilename, bleeding, conversationHistory = [] } = await req.json();
     
-    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
-    if (!GEMINI_API_KEY) {
-      throw new Error('GEMINI_API_KEY not configured');
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      throw new Error('LOVABLE_API_KEY not configured');
     }
 
     console.log('[TriageAgent]: Analyzing patient data - Symptoms:', symptoms, 'Video:', videoFilename);
@@ -61,21 +61,24 @@ Respond in JSON format:
     ];
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
+      'https://ai.gateway.lovable.dev/v1/chat/completions',
       {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          contents: messages,
-          generationConfig: {
-            temperature: 0.4,
-            topP: 0.95,
-            topK: 40,
-            maxOutputTokens: 1024,
-            responseMimeType: "application/json"
-          }
+          model: 'google/gemini-2.5-flash',
+          messages: [
+            {
+              role: 'user',
+              content: messages[0].parts[0].text
+            }
+          ],
+          response_format: { type: "json_object" },
+          temperature: 0.4,
+          max_tokens: 1024,
         }),
       }
     );
@@ -83,11 +86,11 @@ Respond in JSON format:
     const data = await response.json();
     
     if (!response.ok) {
-      console.error('Gemini API error:', data);
-      throw new Error(`Gemini API error: ${JSON.stringify(data)}`);
+      console.error('Lovable AI error:', data);
+      throw new Error(`Lovable AI error: ${JSON.stringify(data)}`);
     }
 
-    const result = JSON.parse(data.candidates[0].content.parts[0].text);
+    const result = JSON.parse(data.choices[0].message.content);
     
     console.log('[TriageAgent]: Assessment complete - Severity:', result.severity);
     
