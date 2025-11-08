@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { HospitalSelector, Hospital } from '@/components/HospitalSelector';
 import { AmbulanceMap } from '@/components/AmbulanceMap';
 import { FirstAidInstructions } from '@/components/FirstAidInstructions';
+import { AmbulanceChat } from '@/components/AmbulanceChat';
 
 interface PatientViewProps {
   onPatientRegistered: (patient: Patient) => void;
@@ -446,6 +447,10 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
           {firstAidInstructions && (
             <FirstAidInstructions instructions={firstAidInstructions} />
           )}
+
+          <AmbulanceChat 
+            patientContext={`Patient symptoms: ${symptoms}. Severity: ${result.severity}. First-aid instructions: ${firstAidInstructions?.substring(0, 200) || 'N/A'}...`}
+          />
 
           <Button onClick={resetForm} variant="outline" className="w-full">
             Return to Triage
