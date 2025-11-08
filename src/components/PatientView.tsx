@@ -22,13 +22,19 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
   const [selectedHospital, setSelectedHospital] = useState('');
   const [symptoms, setSymptoms] = useState('');
   const [selectedVideo, setSelectedVideo] = useState('');
-  const [bleeding, setBleeding] = useState<'Yes' | 'No'>('No');
-  const [result, setResult] = useState<{ severity: number; waitTime?: number; requiresDispatch: boolean } | null>(null);
+  const [result, setResult] = useState<{ 
+    severity: number; 
+    waitTime?: number; 
+    requiresDispatch: boolean;
+    recommendations?: string;
+    triageNotes?: string;
+  } | null>(null);
   const [showConfirmDispatch, setShowConfirmDispatch] = useState(false);
   const [conversationHistory, setConversationHistory] = useState<Array<{ role: string; content: string }>>([]);
   const [aiQuestion, setAiQuestion] = useState<string | null>(null);
   const [userResponse, setUserResponse] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [registrationComplete, setRegistrationComplete] = useState(false);
 
   const handleSubmit = async () => {
     if (!nhsNumber || !selectedHospital || !symptoms || !selectedVideo) {
@@ -50,7 +56,6 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
         body: {
           symptoms,
           videoFilename: selectedVideo,
-          bleeding,
           conversationHistory
         }
       });
@@ -69,14 +74,15 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
 
       const severity = data.severity;
       const triageNotes = data.triageNotes;
+      const recommendations = data.recommendations;
 
       if (severity >= 8) {
-        setResult({ severity, requiresDispatch: true });
+        setResult({ severity, requiresDispatch: true, recommendations, triageNotes });
         setShowConfirmDispatch(true);
         console.log(`[TriageAgent]: HIGH SEVERITY DETECTED - Severity ${severity}/10`);
       } else {
         const waitTime = calculateWaitTime(severity, currentQueueLength);
-        setResult({ severity, waitTime, requiresDispatch: false });
+        setResult({ severity, waitTime, requiresDispatch: false, recommendations, triageNotes });
         
         const newPatient: Patient = {
           queue_id: `Q${Date.now()}`,
@@ -90,7 +96,9 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
         };
 
         console.log(`[OpsAgent]: Registering new patient (ID ${nhsNumber}). Severity ${severity}.`);
+        console.log(`[System]: Patient data successfully transmitted to hospital system.`);
         onPatientRegistered(newPatient);
+        setRegistrationComplete(true);
       }
     } catch (error) {
       console.error('Error in AI triage assessment:', error);
@@ -113,7 +121,6 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
         body: {
           symptoms,
           videoFilename: selectedVideo,
-          bleeding,
           conversationHistory: updatedHistory
         }
       });
@@ -127,13 +134,14 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
         setAiQuestion(null);
         const severity = data.severity;
         const triageNotes = data.triageNotes;
+        const recommendations = data.recommendations;
 
         if (severity >= 8) {
-          setResult({ severity, requiresDispatch: true });
+          setResult({ severity, requiresDispatch: true, recommendations, triageNotes });
           setShowConfirmDispatch(true);
         } else {
           const waitTime = calculateWaitTime(severity, currentQueueLength);
-          setResult({ severity, waitTime, requiresDispatch: false });
+          setResult({ severity, waitTime, requiresDispatch: false, recommendations, triageNotes });
           
           const patientData = mockPatientDB.find(p => p.nhs_number === nhsNumber);
           const newPatient: Patient = {
@@ -147,7 +155,9 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
             video_filename: selectedVideo
           };
 
+          console.log(`[System]: Patient data successfully transmitted to hospital system.`);
           onPatientRegistered(newPatient);
+          setRegistrationComplete(true);
         }
       }
     } catch (error) {
@@ -169,7 +179,6 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
         body: {
           symptoms,
           videoFilename: selectedVideo,
-          bleeding,
           conversationHistory
         }
       });
@@ -205,12 +214,12 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
     setSelectedHospital('');
     setSymptoms('');
     setSelectedVideo('');
-    setBleeding('No');
     setResult(null);
     setShowConfirmDispatch(false);
     setConversationHistory([]);
     setAiQuestion(null);
     setUserResponse('');
+    setRegistrationComplete(false);
   };
 
   return (
@@ -279,45 +288,32 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label>Are you bleeding heavily?</Label>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant={bleeding === 'Yes' ? 'destructive' : 'outline'}
-                onClick={() => setBleeding('Yes')}
-                className="flex-1"
-              >
-                Yes
-              </Button>
-              <Button
-                type="button"
-                variant={bleeding === 'No' ? 'default' : 'outline'}
-                onClick={() => setBleeding('No')}
-                className="flex-1"
-              >
-                No
-              </Button>
-            </div>
-          </div>
-
           {aiQuestion && (
-            <div className="p-4 bg-accent/10 rounded-md border border-accent/30 space-y-3">
-              <p className="font-semibold text-accent">AI Agent Question:</p>
-              <p className="text-sm text-foreground">{aiQuestion}</p>
-              <div className="flex gap-2">
-                <Textarea
-                  placeholder="Your response..."
-                  value={userResponse}
-                  onChange={(e) => setUserResponse(e.target.value)}
-                  rows={2}
-                />
-                <Button 
-                  onClick={handleAiQuestionResponse}
-                  disabled={isProcessing || !userResponse.trim()}
-                >
-                  {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Respond'}
-                </Button>
+            <div className="p-6 bg-gradient-to-br from-primary/5 to-accent/5 rounded-lg border-2 border-primary/20 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <AlertCircle className="h-5 w-5 text-primary" />
+                </div>
+                <div className="flex-1 space-y-3">
+                  <p className="font-semibold text-primary text-lg">AI Assessment Question</p>
+                  <p className="text-base text-foreground leading-relaxed">{aiQuestion}</p>
+                  <div className="flex gap-2">
+                    <Textarea
+                      placeholder="Type your response here..."
+                      value={userResponse}
+                      onChange={(e) => setUserResponse(e.target.value)}
+                      rows={2}
+                      className="flex-1"
+                    />
+                    <Button 
+                      onClick={handleAiQuestionResponse}
+                      disabled={isProcessing || !userResponse.trim()}
+                      size="lg"
+                    >
+                      {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Submit'}
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -370,18 +366,56 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
         </Alert>
       )}
 
-      {result && !result.requiresDispatch && (
+      {result && !result.requiresDispatch && registrationComplete && (
         <Alert className="border-success bg-success/10">
           <CheckCircle className="h-5 w-5 text-success" />
           <AlertDescription>
-            <div className="space-y-2">
-              <p className="font-semibold text-success text-lg">Registration Successful</p>
-              <p className="text-foreground">Severity: {result.severity}/10</p>
-              <p className="text-foreground">Approximate wait time: {result.waitTime} minutes</p>
-              <p className="text-muted-foreground mt-2">
-                You are now registered in the queue. You will receive updates on your estimated time.
-              </p>
-              <Button onClick={resetForm} className="mt-2">
+            <div className="space-y-4">
+              <div>
+                <p className="font-semibold text-success text-xl mb-3">✓ Registration Complete</p>
+                <p className="text-muted-foreground mb-4">
+                  Your information has been successfully transmitted to the hospital system.
+                </p>
+              </div>
+
+              <div className="bg-background/50 p-4 rounded-lg space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Severity Level</p>
+                    <p className="text-2xl font-bold text-foreground">{result.severity}/10</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {result.severity <= 3 ? 'Minor Issue' : result.severity <= 6 ? 'Moderate Issue' : 'Serious Issue'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Estimated Wait</p>
+                    <p className="text-2xl font-bold text-foreground">{result.waitTime} min</p>
+                    <p className="text-xs text-muted-foreground mt-1">Approximate time</p>
+                  </div>
+                </div>
+
+                {result.triageNotes && (
+                  <div className="pt-3 border-t border-border/50">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Assessment Notes</p>
+                    <p className="text-sm text-foreground">{result.triageNotes}</p>
+                  </div>
+                )}
+
+                {result.recommendations && (
+                  <div className="pt-3 border-t border-border/50">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">⚕️ Recommendations</p>
+                    <p className="text-sm text-foreground font-medium">{result.recommendations}</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-primary/5 p-3 rounded-md">
+                <p className="text-sm text-foreground">
+                  <strong>Next steps:</strong> You are now in the queue. Monitor the <strong>Ambulance View</strong> and <strong>Hospital Operations</strong> tabs for real-time updates on your case.
+                </p>
+              </div>
+
+              <Button onClick={resetForm} className="mt-2 w-full" size="lg">
                 Register Another Patient
               </Button>
             </div>
