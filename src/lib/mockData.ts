@@ -13,6 +13,42 @@ export const mockPatientDB: MockPatientDB[] = [
     dob: '1955-11-20',
     medical_history: ['Hypertension', 'Type 2 Diabetes', 'Previous MI (2018)']
   }
+  {
+    nhs_number: '9912003073',
+    name: 'Ban Joe',
+    dob: '2002-03-15',
+    medical_history: ['Asthma', 'Penicillin Allergy']
+  },
+  {
+    nhs_number: '9912003074',
+    name: 'Gui Tar',
+    dob: '1955-11-20',
+    medical_history: ['Hypertension', 'Type 2 Diabetes', 'Previous MI (2018)']
+  }
+{
+    nhs_number: '9912003075',
+    name: 'Harp Haze',
+    dob: '2002-03-15',
+    medical_history: ['Asthma', 'Penicillin Allergy']
+  },
+  {
+    nhs_number: '9912003076',
+    name: 'Clair aNet',
+    dob: '1955-11-20',
+    medical_history: ['Hypertension', 'Type 2 Diabetes', 'Previous MI (2018)']
+  }
+  {
+    nhs_number: '9912003077',
+    name: 'Pian Over',
+    dob: '2002-03-15',
+    medical_history: ['Asthma', 'Penicillin Allergy']
+  },
+  {
+    nhs_number: '9912003078',
+    name: 'Kay Bord',
+    dob: '1955-11-20',
+    medical_history: ['Hypertension', 'Type 2 Diabetes', 'Previous MI (2018)']
+  }
 ];
 
 export const mockHospitalDB: MockHospitalDB[] = [
