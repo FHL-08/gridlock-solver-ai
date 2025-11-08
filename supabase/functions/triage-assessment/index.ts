@@ -90,7 +90,14 @@ Respond in JSON format:
       throw new Error(`Lovable AI error: ${JSON.stringify(data)}`);
     }
 
-    const result = JSON.parse(data.choices[0].message.content);
+    let responseText = data.choices[0].message.content;
+    
+    // Strip markdown code blocks if present
+    if (responseText.includes('```')) {
+      responseText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    }
+    
+    const result = JSON.parse(responseText);
     
     console.log('[TriageAgent]: Assessment complete - Severity:', result.severity);
     
