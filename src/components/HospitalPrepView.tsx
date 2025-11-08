@@ -136,8 +136,8 @@ export function HospitalPrepView({ patients, onUpdatePatient }: HospitalPrepView
                   <Ambulance className="h-5 w-5 text-critical" />
                   <AlertDescription>
                     <div className="space-y-6">
-                     {/* Real-time Ambulance Tracking */}
-                    {(patient.status === 'Prep Ready' || patient.status === 'In Transit' || patient.status === 'Moving to Operation Theatre') && patient.eta_minutes && patient.eta_minutes > 0 && !patient.has_arrived_at_hospital && (
+                    {/* Real-time Ambulance Tracking */}
+                    {(patient.status === 'Prep Ready' || patient.status === 'In Transit' || patient.status === 'Moving to Operation Theatre') && patient.eta_minutes !== undefined && !patient.has_arrived_at_hospital && (
                       <div className="mb-4">
                         <AmbulanceMap 
                           patientName={patient.patient_name} 
