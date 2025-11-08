@@ -8,7 +8,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Patient } from '@/types/patient';
 import { AmbulanceMap } from '@/components/AmbulanceMap';
-import { LocationOverviewMap } from '@/components/LocationOverviewMap';
 import { ParamedicChat } from '@/components/ParamedicChat';
 import { videoOptions, mockHospitalDB } from '@/lib/mockData';
 import { User, Activity, FileText, Clock } from 'lucide-react';
@@ -136,12 +135,6 @@ export function FirstResponderView({ patients, onUpdatePatient }: FirstResponder
         <h2 className="text-2xl font-bold text-foreground mb-2">First Responder View</h2>
         <p className="text-muted-foreground">En route to emergency - Real-time navigation & patient communication</p>
       </div>
-
-      {/* Location Overview Map */}
-      <LocationOverviewMap 
-        patientName={activePatient.patient_name}
-        patientLocation="Emergency Scene"
-      />
 
       {!hasArrived ? (
         <>
