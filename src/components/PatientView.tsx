@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -9,9 +9,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { mockPatientDB, videoOptions } from '@/lib/mockData';
 import { calculateWaitTime } from '@/lib/aiSubstitutions';
 import { Patient } from '@/types/patient';
-import { AlertCircle, CheckCircle, Phone, Loader2 } from 'lucide-react';
+import { AlertCircle, CheckCircle, Phone, Loader2, Clock, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { HospitalSelector, Hospital } from '@/components/HospitalSelector';
+import { AmbulanceMap } from '@/components/AmbulanceMap';
 
 interface PatientViewProps {
   onPatientRegistered: (patient: Patient) => void;
@@ -37,6 +38,9 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
   const [userResponse, setUserResponse] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [registrationComplete, setRegistrationComplete] = useState(false);
+  const [dispatchConfirmed, setDispatchConfirmed] = useState(false);
+  const [firstAidInstructions, setFirstAidInstructions] = useState<string>('');
+  const [queueNumber, setQueueNumber] = useState<string>('');
 
   const handleSubmit = async () => {
     if (!nhsNumber || !selectedHospital || !symptoms || !selectedVideo) {
@@ -86,21 +90,23 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
         const waitTime = calculateWaitTime(severity, currentQueueLength);
         setResult({ severity, waitTime, requiresDispatch: false, recommendations, triageNotes });
         
-        const newPatient: Patient = {
-          queue_id: `Q${Date.now()}`,
-          patient_name: patientData.name,
-          nhs_number: nhsNumber,
-          severity,
-          status: 'Waiting (Remote)',
-          triage_notes: triageNotes,
-          symptom_description: symptoms,
-          video_filename: selectedVideo
-        };
+          const queueId = `Q${Date.now()}`;
+          const newPatient: Patient = {
+            queue_id: queueId,
+            patient_name: patientData.name,
+            nhs_number: nhsNumber,
+            severity,
+            status: 'Waiting (Remote)',
+            triage_notes: triageNotes,
+            symptom_description: symptoms,
+            video_filename: selectedVideo
+          };
 
-        console.log(`[OpsAgent]: Registering new patient (ID ${nhsNumber}). Severity ${severity}.`);
-        console.log(`[System]: Patient data successfully transmitted to hospital system.`);
-        onPatientRegistered(newPatient);
-        setRegistrationComplete(true);
+          console.log(`[OpsAgent]: Registering new patient (ID ${nhsNumber}). Severity ${severity}.`);
+          console.log(`[System]: Patient data successfully transmitted to hospital system.`);
+          onPatientRegistered(newPatient);
+          setQueueNumber(queueId);
+          setRegistrationComplete(true);
       }
     } catch (error) {
       console.error('Error in AI triage assessment:', error);
@@ -146,8 +152,9 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
           setResult({ severity, waitTime, requiresDispatch: false, recommendations, triageNotes });
           
           const patientData = mockPatientDB.find(p => p.nhs_number === nhsNumber);
+          const queueId = `Q${Date.now()}`;
           const newPatient: Patient = {
-            queue_id: `Q${Date.now()}`,
+            queue_id: queueId,
             patient_name: patientData!.name,
             nhs_number: nhsNumber,
             severity,
@@ -159,6 +166,7 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
 
           console.log(`[System]: Patient data successfully transmitted to hospital system.`);
           onPatientRegistered(newPatient);
+          setQueueNumber(queueId);
           setRegistrationComplete(true);
         }
       }
@@ -187,6 +195,15 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
 
       if (error) throw error;
 
+      // Get first-aid instructions
+      const { data: instructionsData } = await supabase.functions.invoke('first-aid-instructions', {
+        body: { symptoms }
+      });
+
+      if (instructionsData?.instructions) {
+        setFirstAidInstructions(instructionsData.instructions);
+      }
+
       const newPatient: Patient = {
         queue_id: `Q${Date.now()}`,
         patient_name: patientData.name,
@@ -196,19 +213,27 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
         triage_notes: data.triageNotes,
         symptom_description: symptoms,
         video_filename: selectedVideo,
-        eta_minutes: 15
+        eta_minutes: 15,
+        dispatch_time: Date.now()
       };
 
       console.log(`[OpsAgent]: High-severity event (ID ${nhsNumber}). Severity ${result.severity}. Requesting dispatch.`);
       console.log(`[EMSAgent]: Ambulance dispatched for patient ${nhsNumber}`);
       onPatientRegistered(newPatient);
       setShowConfirmDispatch(false);
+      setDispatchConfirmed(true);
     } catch (error) {
       console.error('Error in dispatch:', error);
       alert('Error processing dispatch. Please try again.');
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleArrived = () => {
+    // Update patient status to indicate they've arrived at the physical hospital
+    console.log(`[System]: Patient ${nhsNumber} marked as arrived at hospital`);
+    alert('Thank you! Hospital staff have been notified of your arrival.');
   };
 
   const resetForm = () => {
@@ -222,6 +247,9 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
     setAiQuestion(null);
     setUserResponse('');
     setRegistrationComplete(false);
+    setDispatchConfirmed(false);
+    setFirstAidInstructions('');
+    setQueueNumber('');
   };
 
   return (
@@ -370,61 +398,142 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
         </Alert>
       )}
 
-      {result && !result.requiresDispatch && registrationComplete && (
-        <Alert className="border-success bg-success/10">
-          <CheckCircle className="h-5 w-5 text-success" />
-          <AlertDescription>
-            <div className="space-y-4">
-              <div>
-                <p className="font-semibold text-success text-xl mb-3">✓ Registration Complete</p>
-                <p className="text-muted-foreground mb-4">
-                  Your information has been successfully transmitted to the hospital system.
-                </p>
-              </div>
+      {dispatchConfirmed && result && (
+        <div className="space-y-6">
+          <Alert className="border-critical bg-critical/10">
+            <AlertCircle className="h-5 w-5 text-critical" />
+            <AlertDescription>
+              <p className="font-semibold text-critical text-lg">🚨 Emergency Services Dispatched</p>
+              <p className="text-foreground mt-1">Ambulance is en route to your location. Track progress below.</p>
+            </AlertDescription>
+          </Alert>
 
-              <div className="bg-background/50 p-4 rounded-lg space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Severity Level</p>
-                    <p className="text-2xl font-bold text-foreground">{result.severity}/10</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {result.severity <= 3 ? 'Minor Issue' : result.severity <= 6 ? 'Moderate Issue' : 'Serious Issue'}
-                    </p>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="h-5 w-5 text-critical" />
+                Live Ambulance Tracking
+              </CardTitle>
+              <CardDescription>Real-time location and ETA</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AmbulanceMap 
+                patientName={mockPatientDB.find(p => p.nhs_number === nhsNumber)?.name || 'Patient'} 
+                eta={15}
+                dispatchTime={Date.now()}
+              />
+            </CardContent>
+          </Card>
+
+          {firstAidInstructions && (
+            <Card className="border-primary">
+              <CardHeader>
+                <CardTitle className="text-primary">⚕️ First-Aid Instructions</CardTitle>
+                <CardDescription>Simple steps to help while waiting for ambulance</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="prose prose-sm max-w-none">
+                  <p className="whitespace-pre-wrap text-foreground">{firstAidInstructions}</p>
+                </div>
+                <Alert className="mt-4 border-primary/20 bg-primary/5">
+                  <AlertCircle className="h-4 w-4 text-primary" />
+                  <AlertDescription className="text-sm">
+                    <strong>Remember:</strong> These are temporary measures. Professional help is on the way.
+                  </AlertDescription>
+                </Alert>
+              </CardContent>
+            </Card>
+          )}
+
+          <Button onClick={resetForm} variant="outline" className="w-full">
+            Return to Triage
+          </Button>
+        </div>
+      )}
+
+      {result && !result.requiresDispatch && registrationComplete && !dispatchConfirmed && (
+        <div className="space-y-6">
+          <Alert className="border-success bg-success/10">
+            <CheckCircle className="h-5 w-5 text-success" />
+            <AlertDescription>
+              <p className="font-semibold text-success text-xl mb-2">✓ You're in the Queue</p>
+              <p className="text-muted-foreground">
+                Your information has been sent to the hospital. Please wait for your turn.
+              </p>
+            </AlertDescription>
+          </Alert>
+
+          <Card className="border-primary">
+            <CardHeader>
+              <CardTitle className="text-2xl">Your Queue Status</CardTitle>
+              <CardDescription>Live updates on your waiting time</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-2 gap-6">
+                <div className="p-6 bg-primary/5 rounded-lg border border-primary/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                      <span className="text-lg font-bold text-primary">#</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground uppercase tracking-wide">Queue Number</p>
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Estimated Wait</p>
-                    <p className="text-2xl font-bold text-foreground">{result.waitTime} min</p>
-                    <p className="text-xs text-muted-foreground mt-1">Approximate time</p>
-                  </div>
+                  <p className="text-4xl font-bold text-foreground">{queueNumber}</p>
                 </div>
 
-                {result.triageNotes && (
-                  <div className="pt-3 border-t border-border/50">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Assessment Notes</p>
-                    <p className="text-sm text-foreground">{result.triageNotes}</p>
+                <div className="p-6 bg-accent/5 rounded-lg border border-accent/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock className="h-6 w-6 text-accent animate-pulse" />
+                    <p className="text-sm text-muted-foreground uppercase tracking-wide">Estimated Wait</p>
                   </div>
-                )}
-
-                {result.recommendations && (
-                  <div className="pt-3 border-t border-border/50">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">⚕️ Recommendations</p>
-                    <p className="text-sm text-foreground font-medium">{result.recommendations}</p>
-                  </div>
-                )}
+                  <p className="text-4xl font-bold text-foreground">{result.waitTime} <span className="text-xl">min</span></p>
+                </div>
               </div>
 
-              <div className="bg-primary/5 p-3 rounded-md">
-                <p className="text-sm text-foreground">
-                  <strong>Next steps:</strong> You are now in the queue. Monitor the <strong>Ambulance View</strong> and <strong>Hospital Operations</strong> tabs for real-time updates on your case.
-                </p>
+              <div className="p-4 bg-card rounded-lg border">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Severity Level</p>
+                    <p className="font-semibold text-foreground">{result.severity}/10</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Status</p>
+                    <p className="font-semibold text-foreground">Waiting Remotely</p>
+                  </div>
+                </div>
               </div>
 
-              <Button onClick={resetForm} className="mt-2 w-full" size="lg">
-                Register Another Patient
+              {result.triageNotes && (
+                <div className="p-4 bg-muted/30 rounded-lg">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Assessment Notes</p>
+                  <p className="text-sm text-foreground">{result.triageNotes}</p>
+                </div>
+              )}
+
+              {result.recommendations && (
+                <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">⚕️ Recommendations</p>
+                  <p className="text-sm text-foreground font-medium">{result.recommendations}</p>
+                </div>
+              )}
+
+              <Button onClick={handleArrived} size="lg" className="w-full">
+                <MapPin className="mr-2 h-5 w-5" />
+                I've Arrived at Hospital
               </Button>
-            </div>
-          </AlertDescription>
-        </Alert>
+
+              <Alert className="border-amber-500/50 bg-amber-500/5">
+                <AlertCircle className="h-4 w-4 text-amber-500" />
+                <AlertDescription className="text-xs text-muted-foreground">
+                  <strong>Please note:</strong> Wait times are estimates and may change due to emergency cases or changes in hospital capacity.
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
+
+          <Button onClick={resetForm} variant="outline" className="w-full">
+            Register Another Patient
+          </Button>
+        </div>
       )}
     </div>
   );
