@@ -78,7 +78,7 @@ export function FirstResponderView({ patients, onUpdatePatient }: FirstResponder
           video: updateVideo || undefined
         }
       ],
-      eta_minutes: 12
+      eta_minutes: 0.5
     };
 
     console.log(`[EMSAgent]: Sending update for patient ${activePatient.nhs_number} (${activePatient.patient_name})`);
@@ -142,7 +142,7 @@ export function FirstResponderView({ patients, onUpdatePatient }: FirstResponder
           {/* Map Section */}
           <AmbulanceMap
             patientName={activePatient.patient_name}
-            eta={activePatient.eta_minutes || 12}
+            eta={activePatient.eta_minutes || 0.5}
             dispatchTime={activePatient.dispatch_time}
             reverseDirection={true}
             onArrival={handleAmbulanceArrival}
@@ -182,7 +182,7 @@ export function FirstResponderView({ patients, onUpdatePatient }: FirstResponder
                   <div className="flex items-center gap-2 text-sm">
                     <Clock className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">ETA:</span>
-                    <span className="text-destructive font-semibold">{activePatient.eta_minutes || 12} minutes</span>
+                    <span className="text-destructive font-semibold">{activePatient.eta_minutes || 0.5} minutes</span>
                   </div>
                 </div>
                 <div className="space-y-2">
