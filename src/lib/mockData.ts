@@ -68,6 +68,7 @@ export const mockHospitalDB: MockHospitalDB[] = [
 
 export const videoOptions = [
   { value: "ankle_limp.mp4", label: "Ankle Injury - Limp (Mock Video)" },
+  { value: "light_cough.mp4", label: "Light Cough - Coughing (Mock Video)" },
   { value: "ankle_no_weight.mp4", label: "Ankle Injury - No Weight Bearing (Mock Video)" },
   { value: "laceration.mp4", label: "Laceration/Bleeding (Mock Video)" },
   { value: "stroke_symptoms.mp4", label: "Suspected Stroke Symptoms (Mock Video)" },
