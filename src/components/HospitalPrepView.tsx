@@ -138,7 +138,7 @@ export function HospitalPrepView({ patients }: HospitalPrepViewProps) {
                     {/* Status & ETA */}
                     <div className="grid grid-cols-2 gap-4">
                       <div className="flex items-center gap-2 p-3 bg-card rounded-md">
-                        <Clock className="h-5 w-5 text-critical" />
+                        <Clock className="h-5 w-5 text-critical animate-pulse" />
                         <div>
                           <p className="text-xs text-muted-foreground">ETA</p>
                           <p className="font-bold text-foreground">{formatTime(remainingSeconds)}</p>
