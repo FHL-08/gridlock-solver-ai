@@ -11,6 +11,7 @@ import { calculateWaitTime } from '@/lib/aiSubstitutions';
 import { Patient } from '@/types/patient';
 import { AlertCircle, CheckCircle, Phone, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { HospitalSelector } from '@/components/HospitalSelector';
 
 interface PatientViewProps {
   onPatientRegistered: (patient: Patient) => void;
@@ -228,6 +229,8 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
         <h2 className="text-2xl font-bold text-foreground mb-2">Patient Triage Interface</h2>
         <p className="text-muted-foreground">TriageAgent - Remote Assessment & Registration</p>
       </div>
+
+      <HospitalSelector />
 
       <Card>
         <CardHeader>

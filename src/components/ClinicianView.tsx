@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Textarea } from '@/components/ui/textarea';
 import { Patient } from '@/types/patient';
-import { Bell, CheckCircle, Clock, MapPin } from 'lucide-react';
+import { Bell, CheckCircle, Clock, MapPin, Edit3, Save, X } from 'lucide-react';
 
 interface ClinicianViewProps {
   patients: Patient[];
@@ -12,11 +14,30 @@ interface ClinicianViewProps {
 
 export function ClinicianView({ patients, onApprovePlan }: ClinicianViewProps) {
   const awaitingApproval = patients.filter(p => p.status === 'Awaiting Plan Approval');
+  const [editingPlanId, setEditingPlanId] = useState<string | null>(null);
+  const [editedPlanText, setEditedPlanText] = useState('');
 
   const handleApprove = (patient: Patient) => {
     console.log(`[ClinicianAgent]: Reviewing plan for patient ${patient.nhs_number}`);
     console.log(`[OpsAgent]: Plan for ${patient.nhs_number} Approved by staff. Notifying teams.`);
+    
+    // If plan was edited, update it before approving
+    if (editingPlanId === patient.queue_id && patient.resource_plan) {
+      patient.resource_plan.plan_text = editedPlanText;
+    }
+    
     onApprovePlan(patient);
+    setEditingPlanId(null);
+  };
+
+  const handleEditPlan = (patient: Patient) => {
+    setEditingPlanId(patient.queue_id);
+    setEditedPlanText(patient.resource_plan?.plan_text || '');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingPlanId(null);
+    setEditedPlanText('');
   };
 
   const getSeverityColor = (severity: number) => {
@@ -98,10 +119,80 @@ export function ClinicianView({ patients, onApprovePlan }: ClinicianViewProps) {
 
                     {patient.resource_plan && (
                       <div className="p-4 bg-accent/10 rounded-md border border-accent/30">
-                        <p className="font-semibold mb-2">Proposed Resource Plan:</p>
-                        <pre className="text-sm whitespace-pre-wrap text-foreground">
-                          {patient.resource_plan.plan_text}
-                        </pre>
+                        <div className="flex items-center justify-between mb-3">
+                          <p className="font-semibold">Proposed Resource Plan:</p>
+                          {editingPlanId !== patient.queue_id && (
+                            <Button 
+                              onClick={() => handleEditPlan(patient)}
+                              variant="outline"
+                              size="sm"
+                            >
+                              <Edit3 className="mr-2 h-4 w-4" />
+                              Edit Plan
+                            </Button>
+                          )}
+                        </div>
+                        
+                        {editingPlanId === patient.queue_id ? (
+                          <div className="space-y-3">
+                            <Textarea
+                              value={editedPlanText}
+                              onChange={(e) => setEditedPlanText(e.target.value)}
+                              rows={12}
+                              className="font-mono text-sm"
+                            />
+                            <div className="flex gap-2">
+                              <Button 
+                                onClick={handleCancelEdit}
+                                variant="outline"
+                                size="sm"
+                              >
+                                <X className="mr-2 h-4 w-4" />
+                                Cancel
+                              </Button>
+                              <Button 
+                                onClick={() => setEditingPlanId(null)}
+                                size="sm"
+                                className="bg-primary"
+                              >
+                                <Save className="mr-2 h-4 w-4" />
+                                Save Changes
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="space-y-2 mb-4">
+                              <div className="grid grid-cols-2 gap-3 text-sm">
+                                <div className="p-2 bg-background rounded border">
+                                  <p className="text-xs text-muted-foreground">Entrance</p>
+                                  <p className="font-medium">{patient.resource_plan.entrance}</p>
+                                </div>
+                                {patient.resource_plan.roomAssignment && (
+                                  <div className="p-2 bg-background rounded border">
+                                    <p className="text-xs text-muted-foreground">Room Assignment</p>
+                                    <p className="font-medium">{patient.resource_plan.roomAssignment}</p>
+                                  </div>
+                                )}
+                              </div>
+                              {patient.resource_plan.specialistsNeeded && (
+                                <div className="p-2 bg-background rounded border">
+                                  <p className="text-xs text-muted-foreground mb-1">Specialists</p>
+                                  <p className="text-sm">{patient.resource_plan.specialistsNeeded.join(', ')}</p>
+                                </div>
+                              )}
+                              {patient.resource_plan.equipmentRequired && (
+                                <div className="p-2 bg-background rounded border">
+                                  <p className="text-xs text-muted-foreground mb-1">Equipment</p>
+                                  <p className="text-sm">{patient.resource_plan.equipmentRequired.join(', ')}</p>
+                                </div>
+                              )}
+                            </div>
+                            <pre className="text-sm whitespace-pre-wrap text-foreground p-3 bg-background rounded border">
+                              {patient.resource_plan.plan_text}
+                            </pre>
+                          </>
+                        )}
                       </div>
                     )}
 

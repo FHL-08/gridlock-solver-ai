@@ -12,6 +12,7 @@ import {
   Users, 
   Navigation 
 } from 'lucide-react';
+import { AmbulanceMap } from '@/components/AmbulanceMap';
 
 interface HospitalPrepViewProps {
   patients: Patient[];
@@ -59,6 +60,16 @@ export function HospitalPrepView({ patients }: HospitalPrepViewProps) {
                 <Ambulance className="h-5 w-5 text-critical" />
                 <AlertDescription>
                   <div className="space-y-6">
+                    {/* Real-time Ambulance Tracking */}
+                    {patient.status === 'In Transit' && (
+                      <div className="mb-4">
+                        <AmbulanceMap 
+                          patientName={patient.patient_name} 
+                          eta={patient.eta_minutes || 15} 
+                        />
+                      </div>
+                    )}
+
                     {/* Patient Header */}
                     <div className="flex items-start justify-between">
                       <div>
