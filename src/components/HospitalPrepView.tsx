@@ -19,9 +19,14 @@ interface HospitalPrepViewProps {
 }
 
 export function HospitalPrepView({ patients }: HospitalPrepViewProps) {
+  console.log('[HospitalPrepView] All patients:', patients);
+  console.log('[HospitalPrepView] Patient statuses:', patients.map(p => ({ name: p.patient_name, status: p.status, severity: p.severity })));
+  
   const highSeverityPatients = patients.filter(
     p => p.severity >= 8 && (p.status === 'In Transit' || p.status === 'Prep Ready')
   );
+  
+  console.log('[HospitalPrepView] High severity patients for map:', highSeverityPatients.map(p => ({ name: p.patient_name, status: p.status })));
 
   const getSeverityColor = (severity: number) => {
     if (severity >= 8) return 'bg-critical text-critical-foreground';
