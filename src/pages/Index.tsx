@@ -10,12 +10,31 @@ import { Activity } from 'lucide-react';
 
 const Index = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
+  const [currentTab, setCurrentTab] = useState('patient');
 
   useEffect(() => {
     console.log('=== ER-Flow System Initialized ===');
     console.log('[System]: Multi-agent healthcare optimization platform active');
     console.log('[System]: Agents: TriageAgent, EMSAgent, OpsAgent, ClinicianAgent');
   }, []);
+
+  // Set prep tab dispatch time when Preparation tab is activated
+  useEffect(() => {
+    if (currentTab === 'preparation') {
+      setPatients(prev =>
+        prev.map(patient => {
+          // Only set prep_tab_dispatch_time for patients that are ready for prep and don't have it set yet
+          if ((patient.status === 'Prep Ready' || patient.status === 'In Transit' || patient.status === 'Moving to Operation Theatre') 
+              && !patient.prep_tab_dispatch_time 
+              && !patient.has_arrived_at_hospital) {
+            console.log(`[System]: Starting hospital arrival countdown for ${patient.patient_name}`);
+            return { ...patient, prep_tab_dispatch_time: Date.now() };
+          }
+          return patient;
+        })
+      );
+    }
+  }, [currentTab, patients.map(p => p.status).join(',')])
 
   // No automatic arrival - handled by respective views
 
@@ -118,7 +137,7 @@ const Index = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="patient" className="space-y-6">
+        <Tabs defaultValue="patient" value={currentTab} onValueChange={setCurrentTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
             <TabsTrigger value="patient">Patient View</TabsTrigger>
             <TabsTrigger value="firstresponder">First Responder</TabsTrigger>

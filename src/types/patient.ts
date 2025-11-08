@@ -7,6 +7,8 @@ export interface Patient {
   triage_notes: string;
   eta_minutes?: number;
   dispatch_time?: number;
+  prep_tab_dispatch_time?: number;
+  has_arrived_at_hospital?: boolean;
   resource_plan?: {
     plan_text: string;
     entrance: string;

@@ -68,14 +68,15 @@ export function HospitalPrepView({ patients, onUpdatePatient }: HospitalPrepView
   );
 
   const handleHospitalArrival = (patient: Patient) => {
-    if (patient.status === 'Moving to Operation Theatre' && onUpdatePatient) {
+    if (patient.status === 'Moving to Operation Theatre' && onUpdatePatient && !patient.has_arrived_at_hospital) {
       const arrivedPatient: Patient = {
         ...patient,
         status: 'Arrived',
-        eta_minutes: 0
+        eta_minutes: 0,
+        has_arrived_at_hospital: true
       };
       onUpdatePatient(arrivedPatient);
-      console.log(`[System]: Ambulance arrived at hospital with ${patient.patient_name}`);
+      console.log(`[System]: Ambulance arrived at hospital with ${patient.patient_name} (has_arrived_at_hospital flag set)`);
     }
   };
 
@@ -124,13 +125,13 @@ export function HospitalPrepView({ patients, onUpdatePatient }: HospitalPrepView
                   <Ambulance className="h-5 w-5 text-critical" />
                   <AlertDescription>
                     <div className="space-y-6">
-                    {/* Real-time Ambulance Tracking */}
-                    {(patient.status === 'Prep Ready' || patient.status === 'In Transit' || patient.status === 'Moving to Operation Theatre') && patient.eta_minutes && patient.eta_minutes > 0 && (
+                     {/* Real-time Ambulance Tracking */}
+                    {(patient.status === 'Prep Ready' || patient.status === 'In Transit' || patient.status === 'Moving to Operation Theatre') && patient.eta_minutes && patient.eta_minutes > 0 && !patient.has_arrived_at_hospital && (
                       <div className="mb-4">
                         <AmbulanceMap 
                           patientName={patient.patient_name} 
                           eta={patient.eta_minutes}
-                          dispatchTime={patient.dispatch_time}
+                          dispatchTime={patient.prep_tab_dispatch_time}
                           reverseDirection={false}
                           onArrival={() => handleHospitalArrival(patient)}
                         />
