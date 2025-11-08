@@ -60,13 +60,57 @@ export function AmbulanceMap({ patientName, eta, dispatchTime, reverseDirection 
   const totalDistance = 4.5;
   const remainingDistance = totalDistance * (1 - progress / 100);
 
-  // Calculate ambulance position along the route
-  const ambulanceX = reverseDirection 
-    ? 90 - (progress * 0.8)  // Start from right (hospital) to left (patient)
-    : 10 + (progress * 0.8); // Start from left (patient) to right (hospital)
-  const ambulanceY = reverseDirection
-    ? 30 + (progress * 0.4)  // Start from top (hospital) to bottom (patient)
-    : 70 - (progress * 0.4); // Start from bottom (patient) to top (hospital)
+  // Calculate ambulance position along the bezier curve path
+  const getPointOnPath = (t: number, reverse: boolean) => {
+    // Bezier path segments
+    if (reverse) {
+      // M 700 100 Q 600 130, 500 160 Q 400 190, 300 220 Q 200 250, 50 300
+      if (t <= 0.33) {
+        const segT = t / 0.33;
+        return {
+          x: (1-segT)*(1-segT)*700 + 2*(1-segT)*segT*600 + segT*segT*500,
+          y: (1-segT)*(1-segT)*100 + 2*(1-segT)*segT*130 + segT*segT*160
+        };
+      } else if (t <= 0.66) {
+        const segT = (t - 0.33) / 0.33;
+        return {
+          x: (1-segT)*(1-segT)*500 + 2*(1-segT)*segT*400 + segT*segT*300,
+          y: (1-segT)*(1-segT)*160 + 2*(1-segT)*segT*190 + segT*segT*220
+        };
+      } else {
+        const segT = (t - 0.66) / 0.34;
+        return {
+          x: (1-segT)*(1-segT)*300 + 2*(1-segT)*segT*200 + segT*segT*50,
+          y: (1-segT)*(1-segT)*220 + 2*(1-segT)*segT*250 + segT*segT*300
+        };
+      }
+    } else {
+      // M 50 300 Q 200 250, 300 220 Q 400 190, 500 160 Q 600 130, 700 100
+      if (t <= 0.33) {
+        const segT = t / 0.33;
+        return {
+          x: (1-segT)*(1-segT)*50 + 2*(1-segT)*segT*200 + segT*segT*300,
+          y: (1-segT)*(1-segT)*300 + 2*(1-segT)*segT*250 + segT*segT*220
+        };
+      } else if (t <= 0.66) {
+        const segT = (t - 0.33) / 0.33;
+        return {
+          x: (1-segT)*(1-segT)*300 + 2*(1-segT)*segT*400 + segT*segT*500,
+          y: (1-segT)*(1-segT)*220 + 2*(1-segT)*segT*190 + segT*segT*160
+        };
+      } else {
+        const segT = (t - 0.66) / 0.34;
+        return {
+          x: (1-segT)*(1-segT)*500 + 2*(1-segT)*segT*600 + segT*segT*700,
+          y: (1-segT)*(1-segT)*160 + 2*(1-segT)*segT*130 + segT*segT*100
+        };
+      }
+    }
+  };
+
+  const pathPoint = getPointOnPath(progress / 100, reverseDirection);
+  const ambulanceX = (pathPoint.x / 800) * 100; // Convert to percentage of viewBox
+  const ambulanceY = (pathPoint.y / 400) * 100; // Convert to percentage of viewBox
 
   return (
     <Card className="overflow-hidden border-2 border-critical/20">
@@ -128,6 +172,7 @@ export function AmbulanceMap({ patientName, eta, dispatchTime, reverseDirection 
               left: `${ambulanceX}%`, 
               top: `${ambulanceY}%`,
               transform: 'translate(-50%, -50%)',
+              zIndex: 10,
             }}
           >
             {/* Pulse rings */}
@@ -273,7 +318,6 @@ export function AmbulanceMap({ patientName, eta, dispatchTime, reverseDirection 
           </div>
           <div className="flex justify-between mt-1 text-xs text-muted-foreground">
             <span>Dispatched</span>
-            <span>{progress}% Complete</span>
             <span>Arriving</span>
           </div>
         </div>

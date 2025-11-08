@@ -217,7 +217,7 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
         triage_notes: data.triageNotes,
         symptom_description: symptoms,
         video_filename: selectedVideo,
-        eta_minutes: 2,
+        eta_minutes: 1,
         dispatch_time: dispatchTime
       };
 
@@ -435,7 +435,7 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
             <CardContent>
               <AmbulanceMap 
                 patientName={mockPatientDB.find(p => p.nhs_number === nhsNumber)?.name || 'Patient'} 
-                eta={2}
+                eta={1}
                 dispatchTime={ambulanceDispatchTime}
                 reverseDirection={true}
               />
