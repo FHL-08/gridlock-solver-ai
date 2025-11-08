@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Activity, TrendingUp } from 'lucide-react';
 
-interface Hospital {
+export interface Hospital {
   id: string;
   name: string;
   distance: number;
@@ -13,7 +13,11 @@ interface Hospital {
   isFreest: boolean;
 }
 
-export function HospitalSelector() {
+interface HospitalSelectorProps {
+  onHospitalsUpdate?: (hospitals: Hospital[]) => void;
+}
+
+export function HospitalSelector({ onHospitalsUpdate }: HospitalSelectorProps) {
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [userLocation, setUserLocation] = useState({ lat: 51.5074, lng: -0.1278 });
 
@@ -64,6 +68,7 @@ export function HospitalSelector() {
       hospitalData.forEach(h => h.isFreest = h.id === freest.id);
 
       setHospitals(hospitalData);
+      onHospitalsUpdate?.(hospitalData);
     };
 
     updateHospitals();

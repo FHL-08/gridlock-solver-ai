@@ -6,12 +6,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { mockPatientDB, mockHospitalDB, videoOptions } from '@/lib/mockData';
+import { mockPatientDB, videoOptions } from '@/lib/mockData';
 import { calculateWaitTime } from '@/lib/aiSubstitutions';
 import { Patient } from '@/types/patient';
 import { AlertCircle, CheckCircle, Phone, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { HospitalSelector } from '@/components/HospitalSelector';
+import { HospitalSelector, Hospital } from '@/components/HospitalSelector';
 
 interface PatientViewProps {
   onPatientRegistered: (patient: Patient) => void;
@@ -23,6 +23,7 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
   const [selectedHospital, setSelectedHospital] = useState('');
   const [symptoms, setSymptoms] = useState('');
   const [selectedVideo, setSelectedVideo] = useState('');
+  const [nearbyHospitals, setNearbyHospitals] = useState<Hospital[]>([]);
   const [result, setResult] = useState<{ 
     severity: number; 
     waitTime?: number; 
@@ -230,7 +231,7 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
         <p className="text-muted-foreground">TriageAgent - Remote Assessment & Registration</p>
       </div>
 
-      <HospitalSelector />
+      <HospitalSelector onHospitalsUpdate={setNearbyHospitals} />
 
       <Card>
         <CardHeader>
@@ -254,10 +255,10 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
               <SelectTrigger id="hospital">
                 <SelectValue placeholder="Choose a hospital" />
               </SelectTrigger>
-              <SelectContent>
-                {mockHospitalDB.map(hospital => (
-                  <SelectItem key={hospital.hospital_id} value={hospital.hospital_id}>
-                    {hospital.name} ({hospital.current_capacity}/{hospital.max_capacity})
+              <SelectContent className="bg-background z-50">
+                {nearbyHospitals.map(hospital => (
+                  <SelectItem key={hospital.id} value={hospital.id}>
+                    {hospital.name} - {hospital.distance} km ({hospital.capacity}/{hospital.maxCapacity})
                   </SelectItem>
                 ))}
               </SelectContent>
