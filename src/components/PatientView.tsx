@@ -13,6 +13,7 @@ import { AlertCircle, CheckCircle, Phone, Loader2, Clock, MapPin } from 'lucide-
 import { supabase } from '@/integrations/supabase/client';
 import { HospitalSelector, Hospital } from '@/components/HospitalSelector';
 import { AmbulanceMap } from '@/components/AmbulanceMap';
+import { FirstAidInstructions } from '@/components/FirstAidInstructions';
 
 interface PatientViewProps {
   onPatientRegistered: (patient: Patient) => void;
@@ -443,23 +444,7 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
           </Card>
 
           {firstAidInstructions && (
-            <Card className="border-primary">
-              <CardHeader>
-                <CardTitle className="text-primary">⚕️ First-Aid Instructions</CardTitle>
-                <CardDescription>Simple steps to help while waiting for ambulance</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="prose prose-sm max-w-none">
-                  <p className="whitespace-pre-wrap text-foreground">{firstAidInstructions}</p>
-                </div>
-                <Alert className="mt-4 border-primary/20 bg-primary/5">
-                  <AlertCircle className="h-4 w-4 text-primary" />
-                  <AlertDescription className="text-sm">
-                    <strong>Remember:</strong> These are temporary measures. Professional help is on the way.
-                  </AlertDescription>
-                </Alert>
-              </CardContent>
-            </Card>
+            <FirstAidInstructions instructions={firstAidInstructions} />
           )}
 
           <Button onClick={resetForm} variant="outline" className="w-full">
