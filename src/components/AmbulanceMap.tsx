@@ -5,21 +5,37 @@ import { Navigation, Clock, MapPin, Radio } from 'lucide-react';
 interface AmbulanceMapProps {
   patientName: string;
   eta: number;
+  dispatchTime?: number;
 }
 
-export function AmbulanceMap({ patientName, eta }: AmbulanceMapProps) {
+export function AmbulanceMap({ patientName, eta, dispatchTime }: AmbulanceMapProps) {
   const [progress, setProgress] = useState(0);
+  const [currentEta, setCurrentEta] = useState(eta);
 
   useEffect(() => {
+    if (!dispatchTime) {
+      // Fallback to simple animation if no dispatch time
+      const interval = setInterval(() => {
+        setProgress((prev) => Math.min(prev + 1, 100));
+      }, 500);
+      return () => clearInterval(interval);
+    }
+
+    // Calculate progress based on elapsed time
+    const totalDuration = eta * 60 * 1000; // Convert minutes to milliseconds
+    
     const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) return 0;
-        return prev + 1;
-      });
-    }, 500);
+      const elapsed = Date.now() - dispatchTime;
+      const newProgress = Math.min((elapsed / totalDuration) * 100, 100);
+      const remainingMs = Math.max(totalDuration - elapsed, 0);
+      const remainingMinutes = Math.ceil(remainingMs / 60000);
+      
+      setProgress(newProgress);
+      setCurrentEta(remainingMinutes);
+    }, 1000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [dispatchTime, eta]);
 
   // Calculate ambulance position along the route
   const ambulanceX = 10 + (progress * 0.8);
@@ -171,7 +187,7 @@ export function AmbulanceMap({ patientName, eta }: AmbulanceMapProps) {
                 <Clock className="h-5 w-5 text-critical" />
                 <div>
                   <p className="text-xs text-muted-foreground">ETA</p>
-                  <p className="text-xl font-bold text-critical">{eta} min</p>
+                  <p className="text-xl font-bold text-critical">{currentEta} min</p>
                 </div>
               </div>
             </div>

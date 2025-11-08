@@ -33,6 +33,12 @@ export function HospitalOpsView({ patients }: HospitalOpsViewProps) {
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'In Operation Theatre':
+        return 'bg-critical text-critical-foreground';
+      case 'Moving to Operation Theatre':
+        return 'bg-warning text-warning-foreground';
+      case 'Arrived':
+        return 'bg-success text-success-foreground';
       case 'Prep Ready':
         return 'bg-success text-success-foreground';
       case 'In Transit':
@@ -136,11 +142,11 @@ export function HospitalOpsView({ patients }: HospitalOpsViewProps) {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className={getStatusColor(patient.status)}>
-                          {patient.status}
+                          {patient.status === 'In Operation Theatre' ? 'Undergoing Operation' : patient.status}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {patient.eta_minutes ? `${patient.eta_minutes} mins` : '-'}
+                        {patient.eta_minutes && patient.eta_minutes > 0 ? `${patient.eta_minutes} mins` : '-'}
                       </TableCell>
                       <TableCell className="max-w-xs truncate text-sm text-muted-foreground">
                         {patient.triage_notes}

@@ -20,7 +20,8 @@ interface HospitalPrepViewProps {
 
 export function HospitalPrepView({ patients }: HospitalPrepViewProps) {
   const highSeverityPatients = patients.filter(
-    p => p.severity >= 8 && (p.status === 'In Transit' || p.status === 'Prep Ready')
+    p => p.severity >= 8 && 
+    (p.status === 'In Transit' || p.status === 'Prep Ready' || p.status === 'Arrived')
   );
 
   const getSeverityColor = (severity: number) => {
@@ -60,12 +61,13 @@ export function HospitalPrepView({ patients }: HospitalPrepViewProps) {
                 <Ambulance className="h-5 w-5 text-critical" />
                 <AlertDescription>
                   <div className="space-y-6">
-                    {/* Real-time Ambulance Tracking - Show for In Transit and Prep Ready */}
-                    {(patient.status === 'In Transit' || patient.status === 'Prep Ready') && patient.eta_minutes && patient.eta_minutes > 0 && (
+                    {/* Real-time Ambulance Tracking */}
+                    {(patient.status === 'In Transit' || patient.status === 'Prep Ready' || patient.status === 'Arrived') && patient.eta_minutes && (
                       <div className="mb-4">
                         <AmbulanceMap 
                           patientName={patient.patient_name} 
-                          eta={patient.eta_minutes} 
+                          eta={patient.eta_minutes}
+                          dispatchTime={patient.dispatch_time}
                         />
                       </div>
                     )}
@@ -74,7 +76,7 @@ export function HospitalPrepView({ patients }: HospitalPrepViewProps) {
                     <div className="flex items-start justify-between">
                       <div>
                         <p className="font-bold text-xl text-foreground mb-1">
-                          INBOUND: {patient.patient_name}
+                          {patient.status === 'Arrived' ? 'ARRIVED:' : 'INBOUND:'} {patient.patient_name}
                         </p>
                         <p className="text-sm text-muted-foreground">NHS: {patient.nhs_number}</p>
                       </div>

@@ -3,9 +3,10 @@ export interface Patient {
   patient_name: string;
   nhs_number: string;
   severity: number;
-  status: 'Waiting (Remote)' | 'Ambulance Dispatched' | 'In Transit' | 'Awaiting Plan Approval' | 'Prep Ready' | 'Arrived';
+  status: 'Waiting (Remote)' | 'Ambulance Dispatched' | 'In Transit' | 'Awaiting Plan Approval' | 'Prep Ready' | 'Arrived' | 'Moving to Operation Theatre' | 'In Operation Theatre';
   triage_notes: string;
   eta_minutes?: number;
+  dispatch_time?: number;
   resource_plan?: {
     plan_text: string;
     entrance: string;

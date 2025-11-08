@@ -17,13 +17,84 @@ const Index = () => {
     console.log('[System]: Agents: TriageAgent, EMSAgent, OpsAgent, ClinicianAgent');
   }, []);
 
+  // Auto-update patient status based on progress
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPatients(prev => 
+        prev.map(patient => {
+          // Skip if no dispatch time or already in operation
+          if (!patient.dispatch_time || patient.status === 'In Operation Theatre' || patient.status === 'Moving to Operation Theatre') {
+            return patient;
+          }
+
+          const elapsed = Date.now() - patient.dispatch_time;
+          const totalDuration = (patient.eta_minutes || 0) * 60 * 1000;
+          const progress = (elapsed / totalDuration) * 100;
+
+          // Transition from In Transit/Prep Ready to Arrived when 100%
+          if (progress >= 100 && (patient.status === 'In Transit' || patient.status === 'Prep Ready')) {
+            console.log(`[System]: Patient ${patient.patient_name} has ARRIVED`);
+            return { ...patient, status: 'Arrived' as const, eta_minutes: 0 };
+          }
+
+          return patient;
+        })
+      );
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Auto-transition from Arrived to Moving to Operation Theatre
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPatients(prev => 
+        prev.map(patient => {
+          if (patient.status === 'Arrived') {
+            console.log(`[System]: Patient ${patient.patient_name} is moving to operation theatre`);
+            return { ...patient, status: 'Moving to Operation Theatre' as const };
+          }
+          return patient;
+        })
+      );
+    }, 5000); // Wait 5 seconds after arrival
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Auto-transition from Moving to Operation Theatre to In Operation Theatre
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPatients(prev => 
+        prev.map(patient => {
+          if (patient.status === 'Moving to Operation Theatre') {
+            console.log(`[System]: Patient ${patient.patient_name} is now in operation theatre`);
+            return { ...patient, status: 'In Operation Theatre' as const };
+          }
+          return patient;
+        })
+      );
+    }, 8000); // Wait 8 seconds before entering operation theatre
+
+    return () => clearInterval(interval);
+  }, []);
+
   const handlePatientRegistered = (patient: Patient) => {
     setPatients(prev => [...prev, patient]);
   };
 
   const handleUpdatePatient = (updatedPatient: Patient) => {
     setPatients(prev =>
-      prev.map(p => p.queue_id === updatedPatient.queue_id ? updatedPatient : p)
+      prev.map(p => {
+        if (p.queue_id === updatedPatient.queue_id) {
+          // Set dispatch time when status changes to In Transit
+          if (updatedPatient.status === 'In Transit' && !updatedPatient.dispatch_time) {
+            return { ...updatedPatient, dispatch_time: Date.now() };
+          }
+          return updatedPatient;
+        }
+        return p;
+      })
     );
   };
 
