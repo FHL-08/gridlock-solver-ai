@@ -149,7 +149,7 @@ export function AmbulanceMap({ patientName, eta, dispatchTime, reverseDirection 
               </filter>
             </defs>
             
-            {/* Route path - Base (remaining/undriven portion) */}
+            {/* Route path - Base (full route in gray) */}
             <path
               d={reverseDirection 
                 ? "M 700 100 Q 600 130, 500 160 Q 400 190, 300 220 Q 200 250, 50 300"
@@ -163,7 +163,7 @@ export function AmbulanceMap({ patientName, eta, dispatchTime, reverseDirection 
               strokeDasharray="15,10"
             />
             
-            {/* Route path - Traveled portion (uses dashoffset to reveal progressively) */}
+            {/* Route path - Traveled portion (blue) */}
             <path
               d={reverseDirection 
                 ? "M 700 100 Q 600 130, 500 160 Q 400 190, 300 220 Q 200 250, 50 300"
@@ -174,7 +174,8 @@ export function AmbulanceMap({ patientName, eta, dispatchTime, reverseDirection 
               fill="none"
               strokeLinecap="round"
               strokeDasharray="15,10"
-              strokeDashoffset={`${(100 - progress) * 8}px`}
+              pathLength="100"
+              strokeDashoffset={100 - progress}
               className="transition-all duration-500 ease-linear"
             />
             
