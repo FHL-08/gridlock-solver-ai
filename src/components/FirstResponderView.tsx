@@ -27,9 +27,9 @@ export function FirstResponderView({ patients, onUpdatePatient }: FirstResponder
   const [isAtPatientLocation, setIsAtPatientLocation] = useState(false);
   const [isSending, setIsSending] = useState(false);
 
-  // Get the first patient that's either dispatched, in transit, or arrived
+  // Get the first patient that's either dispatched, in transit, arrived, or moving to hospital
   const activePatient = patients.find(
-    p => p.status === 'Ambulance Dispatched' || p.status === 'In Transit' || p.status === 'Prep Ready' || p.status === 'Arrived'
+    p => ['Ambulance Dispatched', 'In Transit', 'Prep Ready', 'Arrived', 'Moving to Operation Theatre', 'Awaiting Plan Approval'].includes(p.status)
   );
 
   const hasArrived = isAtPatientLocation;
