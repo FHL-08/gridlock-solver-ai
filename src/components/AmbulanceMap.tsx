@@ -6,6 +6,7 @@ interface AmbulanceMapProps {
   patientName: string;
   eta: number;
   dispatchTime?: number;
+  reverseDirection?: boolean; // When true, ambulance goes from hospital to patient
 }
 
 // Helper function to format time as HH:MM:SS or MM:SS
@@ -20,7 +21,7 @@ const formatTime = (totalSeconds: number): string => {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 };
 
-export function AmbulanceMap({ patientName, eta, dispatchTime }: AmbulanceMapProps) {
+export function AmbulanceMap({ patientName, eta, dispatchTime, reverseDirection = false }: AmbulanceMapProps) {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
@@ -60,8 +61,12 @@ export function AmbulanceMap({ patientName, eta, dispatchTime }: AmbulanceMapPro
   const remainingDistance = totalDistance * (1 - progress / 100);
 
   // Calculate ambulance position along the route
-  const ambulanceX = 10 + (progress * 0.8);
-  const ambulanceY = 70 - (progress * 0.4);
+  const ambulanceX = reverseDirection 
+    ? 90 - (progress * 0.8)  // Start from right (hospital) to left (patient)
+    : 10 + (progress * 0.8); // Start from left (patient) to right (hospital)
+  const ambulanceY = reverseDirection
+    ? 30 + (progress * 0.4)  // Start from top (hospital) to bottom (patient)
+    : 70 - (progress * 0.4); // Start from bottom (patient) to top (hospital)
 
   return (
     <Card className="overflow-hidden border-2 border-critical/20">
@@ -100,7 +105,10 @@ export function AmbulanceMap({ patientName, eta, dispatchTime }: AmbulanceMapPro
             
             {/* Route path */}
             <path
-              d="M 50 300 Q 200 250, 300 220 Q 400 190, 500 160 Q 600 130, 700 100"
+              d={reverseDirection 
+                ? "M 700 100 Q 600 130, 500 160 Q 400 190, 300 220 Q 200 250, 50 300"
+                : "M 50 300 Q 200 250, 300 220 Q 400 190, 500 160 Q 600 130, 700 100"
+              }
               stroke="url(#routeGradient)"
               strokeWidth="8"
               fill="none"
@@ -138,30 +146,69 @@ export function AmbulanceMap({ patientName, eta, dispatchTime }: AmbulanceMapPro
               </div>
             </div>
             
-            {/* Patient label */}
+            {/* Ambulance label */}
             <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 whitespace-nowrap">
               <div className="bg-background/95 backdrop-blur-sm px-3 py-1 rounded-full border border-critical/30 shadow-lg">
-                <p className="text-xs font-semibold text-foreground">{patientName}</p>
+                <p className="text-xs font-semibold text-foreground">En Route</p>
               </div>
             </div>
           </div>
 
-          {/* Hospital (destination) */}
-          <div className="absolute" style={{ right: '8%', top: '15%' }}>
+          {/* Start point - Hospital or Patient depending on direction */}
+          <div className="absolute" style={reverseDirection ? { right: '8%', top: '15%' } : { left: '5%', bottom: '20%' }}>
+            <div className="relative">
+              {/* Glow effect */}
+              <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl w-16 h-16 -translate-x-1/4 -translate-y-1/4" />
+              
+              {/* Icon */}
+              <div className="relative bg-primary text-primary-foreground rounded-full p-5 shadow-2xl border-4 border-primary-foreground/20">
+                <MapPin className="h-9 w-9" />
+              </div>
+              
+              {/* Label */}
+              <div className="absolute top-full mt-3 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                <div className="bg-primary/10 backdrop-blur-sm px-4 py-2 rounded-lg border border-primary/40 shadow-lg">
+                  {reverseDirection ? (
+                    <>
+                      <p className="text-sm font-bold text-primary">City Hospital</p>
+                      <p className="text-xs text-muted-foreground">Emergency Bay A</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm font-bold text-primary">{patientName}</p>
+                      <p className="text-xs text-muted-foreground">Patient Location</p>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* End point - Patient or Hospital depending on direction */}
+          <div className="absolute" style={reverseDirection ? { left: '5%', bottom: '20%' } : { right: '8%', top: '15%' }}>
             <div className="relative">
               {/* Glow effect */}
               <div className="absolute inset-0 bg-success/20 rounded-full blur-xl w-16 h-16 -translate-x-1/4 -translate-y-1/4" />
               
-              {/* Hospital icon */}
+              {/* Icon */}
               <div className="relative bg-success text-success-foreground rounded-full p-5 shadow-2xl border-4 border-success-foreground/20">
                 <MapPin className="h-9 w-9" />
               </div>
               
-              {/* Hospital label */}
+              {/* Label */}
               <div className="absolute top-full mt-3 left-1/2 -translate-x-1/2 whitespace-nowrap">
                 <div className="bg-success/10 backdrop-blur-sm px-4 py-2 rounded-lg border border-success/40 shadow-lg">
-                  <p className="text-sm font-bold text-success">City Hospital</p>
-                  <p className="text-xs text-muted-foreground">Emergency Bay A</p>
+                  {reverseDirection ? (
+                    <>
+                      <p className="text-sm font-bold text-success">{patientName}</p>
+                      <p className="text-xs text-muted-foreground">Patient Location</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm font-bold text-success">City Hospital</p>
+                      <p className="text-xs text-muted-foreground">Emergency Bay A</p>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

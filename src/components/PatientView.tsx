@@ -432,6 +432,7 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
                 patientName={mockPatientDB.find(p => p.nhs_number === nhsNumber)?.name || 'Patient'} 
                 eta={15}
                 dispatchTime={Date.now()}
+                reverseDirection={true}
               />
             </CardContent>
           </Card>
