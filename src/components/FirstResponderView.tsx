@@ -117,7 +117,7 @@ export function FirstResponderView({ patients, onUpdatePatient }: FirstResponder
     setSymptomUpdate('');
     setActionsTaken('');
     setDialogOpen(false);
-    setIsAtPatientLocation(false);
+    // Keep isAtPatientLocation true - form stays visible until ambulance returns to hospital
     setIsSending(false);
   };
 
