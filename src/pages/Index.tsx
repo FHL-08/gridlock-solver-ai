@@ -45,22 +45,8 @@ const Index = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-transition from Arrived to Moving to Operation Theatre
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setPatients(prev => 
-        prev.map(patient => {
-          if (patient.status === 'Arrived') {
-            console.log(`[System]: Patient ${patient.patient_name} is moving to operation theatre`);
-            return { ...patient, status: 'Moving to Operation Theatre' as const };
-          }
-          return patient;
-        })
-      );
-    }, 5000); // Wait 5 seconds after arrival
-
-    return () => clearInterval(interval);
-  }, []);
+  // Note: Transition from Arrived to Moving to Operation Theatre now happens
+  // when first responder submits their assessment in FirstResponderView
 
   // Auto-transition from Ambulance Dispatched to Prep Ready
   useEffect(() => {

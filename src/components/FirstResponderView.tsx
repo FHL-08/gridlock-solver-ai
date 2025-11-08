@@ -64,7 +64,7 @@ export function FirstResponderView({ patients, onUpdatePatient }: FirstResponder
 
     const updatedPatient: Patient = {
       ...activePatient,
-      status: 'In Transit',
+      status: 'Moving to Operation Theatre',
       symptom_description: symptomUpdate || activePatient.symptom_description,
       ambulance_updates: [
         ...(activePatient.ambulance_updates || []),
