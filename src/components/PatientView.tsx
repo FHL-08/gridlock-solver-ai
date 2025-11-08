@@ -254,12 +254,21 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground mb-2">Patient Triage Interface</h2>
-        <p className="text-muted-foreground">TriageAgent - Remote Assessment & Registration</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground mb-2">Patient Triage Interface</h2>
+          <p className="text-muted-foreground">TriageAgent - Remote Assessment & Registration</p>
+        </div>
+        {(dispatchConfirmed || registrationComplete) && (
+          <Button onClick={resetForm} variant="outline" size="sm">
+            Reset Form
+          </Button>
+        )}
       </div>
 
-      <HospitalSelector onHospitalsUpdate={setNearbyHospitals} />
+      {!dispatchConfirmed && !registrationComplete && (
+        <>
+          <HospitalSelector onHospitalsUpdate={setNearbyHospitals} />
 
       <Card>
         <CardHeader>
@@ -367,6 +376,8 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
           </Button>
         </CardContent>
       </Card>
+        </>
+      )}
 
       {showConfirmDispatch && result && (
         <Alert className="border-critical bg-critical/10">
