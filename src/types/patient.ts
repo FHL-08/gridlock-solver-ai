@@ -9,6 +9,12 @@ export interface Patient {
   resource_plan?: {
     plan_text: string;
     entrance: string;
+    roomAssignment?: string;
+    specialistsNeeded?: string[];
+    equipmentRequired?: string[];
+    staffToContact?: string[];
+    areasToClear?: string[];
+    priority?: string;
   };
   symptom_description?: string;
   video_filename?: string;

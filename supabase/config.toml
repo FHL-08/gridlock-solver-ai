@@ -1,1 +1,7 @@
 project_id = "riskmwojyzjptrezoobx"
+
+[functions.triage-assessment]
+verify_jwt = false
+
+[functions.resource-planning]
+verify_jwt = false

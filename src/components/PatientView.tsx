@@ -7,9 +7,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { mockPatientDB, mockHospitalDB, videoOptions } from '@/lib/mockData';
-import { mockSeverityAnalysis, calculateWaitTime } from '@/lib/aiSubstitutions';
+import { calculateWaitTime } from '@/lib/aiSubstitutions';
 import { Patient } from '@/types/patient';
-import { AlertCircle, CheckCircle, Phone } from 'lucide-react';
+import { AlertCircle, CheckCircle, Phone, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PatientViewProps {
   onPatientRegistered: (patient: Patient) => void;
@@ -24,8 +25,12 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
   const [bleeding, setBleeding] = useState<'Yes' | 'No'>('No');
   const [result, setResult] = useState<{ severity: number; waitTime?: number; requiresDispatch: boolean } | null>(null);
   const [showConfirmDispatch, setShowConfirmDispatch] = useState(false);
+  const [conversationHistory, setConversationHistory] = useState<Array<{ role: string; content: string }>>([]);
+  const [aiQuestion, setAiQuestion] = useState<string | null>(null);
+  const [userResponse, setUserResponse] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!nhsNumber || !selectedHospital || !symptoms || !selectedVideo) {
       alert('Please fill in all fields');
       return;
@@ -37,56 +42,162 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
       return;
     }
 
-    const analysis = mockSeverityAnalysis(selectedVideo, symptoms, { bleeding });
-    
-    console.log(`[TriageAgent]: Patient ${nhsNumber} (${patientData.name}) - Initial assessment complete`);
+    setIsProcessing(true);
 
-    if (analysis.severity >= 8) {
-      setResult({ severity: analysis.severity, requiresDispatch: true });
-      setShowConfirmDispatch(true);
-      console.log(`[TriageAgent]: HIGH SEVERITY DETECTED - Severity ${analysis.severity}/10`);
-    } else {
-      const waitTime = calculateWaitTime(analysis.severity, currentQueueLength);
-      setResult({ severity: analysis.severity, waitTime, requiresDispatch: false });
-      
+    try {
+      // Call AI triage agent
+      const { data, error } = await supabase.functions.invoke('triage-assessment', {
+        body: {
+          symptoms,
+          videoFilename: selectedVideo,
+          bleeding,
+          conversationHistory
+        }
+      });
+
+      if (error) throw error;
+
+      console.log(`[TriageAgent]: Patient ${nhsNumber} (${patientData.name}) - AI assessment complete`);
+
+      // Check if AI needs more information
+      if (data.needsMoreInfo && data.question) {
+        setAiQuestion(data.question);
+        setConversationHistory([...conversationHistory, { role: 'assistant', content: data.question }]);
+        setIsProcessing(false);
+        return;
+      }
+
+      const severity = data.severity;
+      const triageNotes = data.triageNotes;
+
+      if (severity >= 8) {
+        setResult({ severity, requiresDispatch: true });
+        setShowConfirmDispatch(true);
+        console.log(`[TriageAgent]: HIGH SEVERITY DETECTED - Severity ${severity}/10`);
+      } else {
+        const waitTime = calculateWaitTime(severity, currentQueueLength);
+        setResult({ severity, waitTime, requiresDispatch: false });
+        
+        const newPatient: Patient = {
+          queue_id: `Q${Date.now()}`,
+          patient_name: patientData.name,
+          nhs_number: nhsNumber,
+          severity,
+          status: 'Waiting (Remote)',
+          triage_notes: triageNotes,
+          symptom_description: symptoms,
+          video_filename: selectedVideo
+        };
+
+        console.log(`[OpsAgent]: Registering new patient (ID ${nhsNumber}). Severity ${severity}.`);
+        onPatientRegistered(newPatient);
+      }
+    } catch (error) {
+      console.error('Error in AI triage assessment:', error);
+      alert('Error processing assessment. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleAiQuestionResponse = async () => {
+    if (!userResponse.trim()) return;
+
+    const updatedHistory = [...conversationHistory, { role: 'user', content: userResponse }];
+    setConversationHistory(updatedHistory);
+    setUserResponse('');
+    setIsProcessing(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('triage-assessment', {
+        body: {
+          symptoms,
+          videoFilename: selectedVideo,
+          bleeding,
+          conversationHistory: updatedHistory
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.needsMoreInfo && data.question) {
+        setAiQuestion(data.question);
+        setConversationHistory([...updatedHistory, { role: 'assistant', content: data.question }]);
+      } else {
+        setAiQuestion(null);
+        const severity = data.severity;
+        const triageNotes = data.triageNotes;
+
+        if (severity >= 8) {
+          setResult({ severity, requiresDispatch: true });
+          setShowConfirmDispatch(true);
+        } else {
+          const waitTime = calculateWaitTime(severity, currentQueueLength);
+          setResult({ severity, waitTime, requiresDispatch: false });
+          
+          const patientData = mockPatientDB.find(p => p.nhs_number === nhsNumber);
+          const newPatient: Patient = {
+            queue_id: `Q${Date.now()}`,
+            patient_name: patientData!.name,
+            nhs_number: nhsNumber,
+            severity,
+            status: 'Waiting (Remote)',
+            triage_notes: triageNotes,
+            symptom_description: symptoms,
+            video_filename: selectedVideo
+          };
+
+          onPatientRegistered(newPatient);
+        }
+      }
+    } catch (error) {
+      console.error('Error processing follow-up:', error);
+      alert('Error processing response. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleConfirmDispatch = async () => {
+    const patientData = mockPatientDB.find(p => p.nhs_number === nhsNumber);
+    if (!patientData || !result) return;
+
+    setIsProcessing(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('triage-assessment', {
+        body: {
+          symptoms,
+          videoFilename: selectedVideo,
+          bleeding,
+          conversationHistory
+        }
+      });
+
+      if (error) throw error;
+
       const newPatient: Patient = {
         queue_id: `Q${Date.now()}`,
         patient_name: patientData.name,
         nhs_number: nhsNumber,
-        severity: analysis.severity,
-        status: 'Waiting (Remote)',
-        triage_notes: analysis.triage_notes,
+        severity: result.severity,
+        status: 'Ambulance Dispatched',
+        triage_notes: data.triageNotes,
         symptom_description: symptoms,
-        video_filename: selectedVideo
+        video_filename: selectedVideo,
+        eta_minutes: 15
       };
 
-      console.log(`[OpsAgent]: Registering new patient (ID ${nhsNumber}). Severity ${analysis.severity}.`);
+      console.log(`[OpsAgent]: High-severity event (ID ${nhsNumber}). Severity ${result.severity}. Requesting dispatch.`);
+      console.log(`[EMSAgent]: Ambulance dispatched for patient ${nhsNumber}`);
       onPatientRegistered(newPatient);
+      setShowConfirmDispatch(false);
+    } catch (error) {
+      console.error('Error in dispatch:', error);
+      alert('Error processing dispatch. Please try again.');
+    } finally {
+      setIsProcessing(false);
     }
-  };
-
-  const handleConfirmDispatch = () => {
-    const patientData = mockPatientDB.find(p => p.nhs_number === nhsNumber);
-    if (!patientData || !result) return;
-
-    const analysis = mockSeverityAnalysis(selectedVideo, symptoms, { bleeding });
-
-    const newPatient: Patient = {
-      queue_id: `Q${Date.now()}`,
-      patient_name: patientData.name,
-      nhs_number: nhsNumber,
-      severity: result.severity,
-      status: 'Ambulance Dispatched',
-      triage_notes: analysis.triage_notes,
-      symptom_description: symptoms,
-      video_filename: selectedVideo,
-      eta_minutes: 15
-    };
-
-    console.log(`[OpsAgent]: High-severity event (ID ${nhsNumber}). Severity ${result.severity}. Requesting dispatch.`);
-    console.log(`[EMSAgent]: Ambulance dispatched for patient ${nhsNumber}`);
-    onPatientRegistered(newPatient);
-    setShowConfirmDispatch(false);
   };
 
   const resetForm = () => {
@@ -97,6 +208,9 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
     setBleeding('No');
     setResult(null);
     setShowConfirmDispatch(false);
+    setConversationHistory([]);
+    setAiQuestion(null);
+    setUserResponse('');
   };
 
   return (
@@ -187,8 +301,41 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
             </div>
           </div>
 
-          <Button onClick={handleSubmit} className="w-full" size="lg">
-            Submit Assessment
+          {aiQuestion && (
+            <div className="p-4 bg-accent/10 rounded-md border border-accent/30 space-y-3">
+              <p className="font-semibold text-accent">AI Agent Question:</p>
+              <p className="text-sm text-foreground">{aiQuestion}</p>
+              <div className="flex gap-2">
+                <Textarea
+                  placeholder="Your response..."
+                  value={userResponse}
+                  onChange={(e) => setUserResponse(e.target.value)}
+                  rows={2}
+                />
+                <Button 
+                  onClick={handleAiQuestionResponse}
+                  disabled={isProcessing || !userResponse.trim()}
+                >
+                  {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Respond'}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          <Button 
+            onClick={handleSubmit} 
+            className="w-full" 
+            size="lg"
+            disabled={isProcessing}
+          >
+            {isProcessing ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              'Submit Assessment'
+            )}
           </Button>
         </CardContent>
       </Card>

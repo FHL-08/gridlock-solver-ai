@@ -7,8 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Patient } from '@/types/patient';
-import { videoOptions } from '@/lib/mockData';
+import { videoOptions, mockHospitalDB } from '@/lib/mockData';
 import { Ambulance, Clock, MapPin } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AmbulanceViewProps {
   patients: Patient[];
@@ -25,7 +26,7 @@ export function AmbulanceView({ patients, onUpdatePatient }: AmbulanceViewProps)
     p => p.status === 'Ambulance Dispatched' || p.status === 'In Transit'
   );
 
-  const handleSendUpdate = () => {
+  const handleSendUpdate = async () => {
     if (!selectedPatient || !updateText) return;
 
     const updatedPatient: Patient = {
@@ -44,7 +45,33 @@ export function AmbulanceView({ patients, onUpdatePatient }: AmbulanceViewProps)
 
     console.log(`[EMSAgent]: Sending update for patient ${selectedPatient.nhs_number} (${selectedPatient.patient_name})`);
     console.log(`[EMSAgent]: Update: "${updateText}"`);
-    console.log(`[OpsAgent]: Patient (ID ${selectedPatient.nhs_number}) in transit. New data received. Requesting resource plan.`);
+    console.log(`[OpsAgent]: Patient (ID ${selectedPatient.nhs_number}) in transit. New data received. Generating AI resource plan.`);
+
+    // Generate AI-powered resource plan for high-severity patients
+    if (selectedPatient.severity >= 8) {
+      try {
+        const hospitalCapacity = mockHospitalDB[0];
+        
+        const { data, error } = await supabase.functions.invoke('resource-planning', {
+          body: {
+            patient: updatedPatient,
+            hospitalCapacity: {
+              current: hospitalCapacity.current_capacity,
+              max: hospitalCapacity.max_capacity
+            }
+          }
+        });
+
+        if (error) throw error;
+
+        updatedPatient.resource_plan = data;
+        updatedPatient.status = 'Awaiting Plan Approval';
+        
+        console.log(`[OpsAgent]: AI resource plan generated for ${selectedPatient.nhs_number}`);
+      } catch (error) {
+        console.error('Error generating AI resource plan:', error);
+      }
+    }
 
     onUpdatePatient(updatedPatient);
     setUpdateText('');

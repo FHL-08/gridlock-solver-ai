@@ -4,8 +4,8 @@ import { PatientView } from '@/components/PatientView';
 import { AmbulanceView } from '@/components/AmbulanceView';
 import { HospitalOpsView } from '@/components/HospitalOpsView';
 import { ClinicianView } from '@/components/ClinicianView';
+import { HospitalPrepView } from '@/components/HospitalPrepView';
 import { Patient } from '@/types/patient';
-import { mockResourcePlan } from '@/lib/aiSubstitutions';
 import { Activity } from 'lucide-react';
 
 const Index = () => {
@@ -22,16 +22,8 @@ const Index = () => {
   };
 
   const handleUpdatePatient = (updatedPatient: Patient) => {
-    // Generate resource plan when ambulance sends update
-    const plan = mockResourcePlan(updatedPatient);
-    const patientWithPlan: Patient = {
-      ...updatedPatient,
-      resource_plan: plan,
-      status: 'Awaiting Plan Approval'
-    };
-
     setPatients(prev =>
-      prev.map(p => p.queue_id === patientWithPlan.queue_id ? patientWithPlan : p)
+      prev.map(p => p.queue_id === updatedPatient.queue_id ? updatedPatient : p)
     );
   };
 
@@ -62,10 +54,11 @@ const Index = () => {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="patient" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
             <TabsTrigger value="patient">Patient View</TabsTrigger>
             <TabsTrigger value="ambulance">Ambulance</TabsTrigger>
             <TabsTrigger value="hospital">Hospital Ops</TabsTrigger>
+            <TabsTrigger value="preparation">Preparation</TabsTrigger>
             <TabsTrigger value="clinician">Clinician</TabsTrigger>
           </TabsList>
 
@@ -85,6 +78,10 @@ const Index = () => {
 
           <TabsContent value="hospital" className="space-y-4">
             <HospitalOpsView patients={patients} />
+          </TabsContent>
+
+          <TabsContent value="preparation" className="space-y-4">
+            <HospitalPrepView patients={patients} />
           </TabsContent>
 
           <TabsContent value="clinician" className="space-y-4">
