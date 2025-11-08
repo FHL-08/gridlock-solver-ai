@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Patient } from '@/types/patient';
 import { AmbulanceMap } from '@/components/AmbulanceMap';
-import { AmbulanceChat } from '@/components/AmbulanceChat';
+import { ParamedicChat } from '@/components/ParamedicChat';
 import { videoOptions, mockHospitalDB } from '@/lib/mockData';
 import { User, Activity, FileText, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -187,7 +187,7 @@ export function FirstResponderView({ patients, onUpdatePatient }: FirstResponder
           </Card>
 
           {/* Live Chat Section */}
-          <AmbulanceChat patientContext={patientContext} />
+          <ParamedicChat patientContext={patientContext} />
         </>
       ) : (
         <>

@@ -8,3 +8,9 @@ verify_jwt = false
 
 [functions.first-aid-instructions]
 verify_jwt = false
+
+[functions.ambulance-chat]
+verify_jwt = false
+
+[functions.paramedic-chat]
+verify_jwt = false
