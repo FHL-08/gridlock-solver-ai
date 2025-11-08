@@ -7,6 +7,7 @@ interface AmbulanceMapProps {
   eta: number;
   dispatchTime?: number;
   reverseDirection?: boolean; // When true, ambulance goes from hospital to patient
+  onArrival?: () => void; // Callback when ambulance reaches destination
 }
 
 // Helper function to format time as HH:MM:SS or MM:SS
@@ -21,8 +22,9 @@ const formatTime = (totalSeconds: number): string => {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 };
 
-export function AmbulanceMap({ patientName, eta, dispatchTime, reverseDirection = false }: AmbulanceMapProps) {
+export function AmbulanceMap({ patientName, eta, dispatchTime, reverseDirection = false, onArrival }: AmbulanceMapProps) {
   const [progress, setProgress] = useState(0);
+  const [hasArrived, setHasArrived] = useState(false);
 
   useEffect(() => {
     if (!dispatchTime) {
@@ -59,6 +61,14 @@ export function AmbulanceMap({ patientName, eta, dispatchTime, reverseDirection 
   // Calculate remaining distance based on progress (assuming 4.5km total distance)
   const totalDistance = 4.5;
   const remainingDistance = totalDistance * (1 - progress / 100);
+
+  // Trigger arrival callback when ambulance reaches destination
+  useEffect(() => {
+    if (progress >= 100 && !hasArrived && onArrival) {
+      setHasArrived(true);
+      onArrival();
+    }
+  }, [progress, hasArrived, onArrival]);
 
   // Calculate ambulance position along the bezier curve path
   const getPointOnPath = (t: number, reverse: boolean) => {

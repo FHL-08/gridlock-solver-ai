@@ -117,6 +117,18 @@ export function FirstResponderView({ patients, onUpdatePatient }: FirstResponder
 
   const patientContext = `Patient symptoms: ${activePatient.symptom_description}. Severity: ${activePatient.severity}. Triage notes: ${activePatient.triage_notes}`;
 
+  const handleAmbulanceArrival = () => {
+    if (activePatient && activePatient.status !== 'Arrived') {
+      const arrivedPatient: Patient = {
+        ...activePatient,
+        status: 'Arrived',
+        eta_minutes: 0
+      };
+      onUpdatePatient(arrivedPatient);
+      console.log(`[EMSAgent]: Ambulance arrived at patient location for ${activePatient.patient_name}`);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -132,6 +144,7 @@ export function FirstResponderView({ patients, onUpdatePatient }: FirstResponder
             eta={activePatient.eta_minutes || 12}
             dispatchTime={activePatient.dispatch_time}
             reverseDirection={false}
+            onArrival={handleAmbulanceArrival}
           />
 
           {/* Patient Information Card */}
