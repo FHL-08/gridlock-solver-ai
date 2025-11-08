@@ -41,6 +41,7 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
   const [dispatchConfirmed, setDispatchConfirmed] = useState(false);
   const [firstAidInstructions, setFirstAidInstructions] = useState<string>('');
   const [queueNumber, setQueueNumber] = useState<string>('');
+  const [ambulanceDispatchTime, setAmbulanceDispatchTime] = useState<number>(0);
 
   const handleSubmit = async () => {
     if (!nhsNumber || !selectedHospital || !symptoms || !selectedVideo) {
@@ -204,6 +205,9 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
         setFirstAidInstructions(instructionsData.instructions);
       }
 
+      const dispatchTime = Date.now();
+      setAmbulanceDispatchTime(dispatchTime);
+      
       const newPatient: Patient = {
         queue_id: `Q${Date.now()}`,
         patient_name: patientData.name,
@@ -213,8 +217,8 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
         triage_notes: data.triageNotes,
         symptom_description: symptoms,
         video_filename: selectedVideo,
-        eta_minutes: 15,
-        dispatch_time: Date.now()
+        eta_minutes: 2,
+        dispatch_time: dispatchTime
       };
 
       console.log(`[OpsAgent]: High-severity event (ID ${nhsNumber}). Severity ${result.severity}. Requesting dispatch.`);
@@ -250,6 +254,7 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
     setDispatchConfirmed(false);
     setFirstAidInstructions('');
     setQueueNumber('');
+    setAmbulanceDispatchTime(0);
   };
 
   return (
@@ -430,8 +435,8 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
             <CardContent>
               <AmbulanceMap 
                 patientName={mockPatientDB.find(p => p.nhs_number === nhsNumber)?.name || 'Patient'} 
-                eta={15}
-                dispatchTime={Date.now()}
+                eta={2}
+                dispatchTime={ambulanceDispatchTime}
                 reverseDirection={true}
               />
             </CardContent>
