@@ -21,6 +21,8 @@ interface FirstResponderViewProps {
 export function FirstResponderView({ patients, onUpdatePatient }: FirstResponderViewProps) {
   const [updateText, setUpdateText] = useState('');
   const [updateVideo, setUpdateVideo] = useState('');
+  const [symptomUpdate, setSymptomUpdate] = useState('');
+  const [actionsTaken, setActionsTaken] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
 
   // Get the first patient that's either dispatched, in transit, or arrived
@@ -57,14 +59,18 @@ export function FirstResponderView({ patients, onUpdatePatient }: FirstResponder
   const handleSendUpdate = async () => {
     if (!activePatient || !updateText) return;
 
+    // Combine all update information
+    const fullUpdateText = `Symptoms: ${symptomUpdate || activePatient.symptom_description}. Actions taken: ${actionsTaken}. Additional notes: ${updateText}`;
+
     const updatedPatient: Patient = {
       ...activePatient,
       status: 'In Transit',
+      symptom_description: symptomUpdate || activePatient.symptom_description,
       ambulance_updates: [
         ...(activePatient.ambulance_updates || []),
         {
           timestamp: new Date().toISOString(),
-          text: updateText,
+          text: fullUpdateText,
           video: updateVideo || undefined
         }
       ],
@@ -104,6 +110,8 @@ export function FirstResponderView({ patients, onUpdatePatient }: FirstResponder
     onUpdatePatient(updatedPatient);
     setUpdateText('');
     setUpdateVideo('');
+    setSymptomUpdate('');
+    setActionsTaken('');
     setDialogOpen(false);
   };
 
@@ -191,17 +199,17 @@ export function FirstResponderView({ patients, onUpdatePatient }: FirstResponder
         </>
       ) : (
         <>
-          {/* Patient Arrived - Update Form Section */}
+          {/* Patient Arrived - Ambulance Assessment Form */}
           <Card className="border-l-4 border-l-success">
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     <User className="h-5 w-5 text-success" />
-                    Patient Arrived - {activePatient.patient_name}
+                    On Scene - {activePatient.patient_name}
                   </CardTitle>
                   <CardDescription className="mt-1">
-                    Send updates to hospital operations
+                    Document patient assessment and actions taken
                   </CardDescription>
                 </div>
                 <Badge className={getSeverityColor(activePatient.severity)}>
@@ -210,7 +218,7 @@ export function FirstResponderView({ patients, onUpdatePatient }: FirstResponder
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4 border-b">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm">
                     <User className="h-4 w-4 text-muted-foreground" />
@@ -227,77 +235,91 @@ export function FirstResponderView({ patients, onUpdatePatient }: FirstResponder
                   <div className="flex items-center gap-2 text-sm">
                     <Activity className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">Status:</span>
-                    <Badge variant="outline">{activePatient.status}</Badge>
+                    <Badge variant="outline">On Scene</Badge>
                   </div>
                 </div>
               </div>
 
               <div className="p-4 bg-muted rounded-lg space-y-2">
-                <p className="text-sm font-semibold text-foreground">Initial Assessment:</p>
+                <p className="text-sm font-semibold text-foreground">Initial Call Assessment:</p>
                 <p className="text-sm text-muted-foreground">{activePatient.triage_notes}</p>
               </div>
 
-              {activePatient.ambulance_updates && activePatient.ambulance_updates.length > 0 && (
+              {/* Main Update Form */}
+              <div className="space-y-4 pt-2">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium">Previous Updates:</p>
-                  {activePatient.ambulance_updates.map((update, idx) => (
-                    <div key={idx} className="p-3 bg-accent/20 rounded-md border border-accent/30">
-                      <p className="text-sm">{update.text}</p>
-                      {update.video && (
-                        <p className="text-xs text-muted-foreground mt-1">📹 {update.video}</p>
-                      )}
-                    </div>
-                  ))}
+                  <Label htmlFor="video-capture" className="text-base font-semibold">
+                    Patient Video Documentation
+                  </Label>
+                  <Select value={updateVideo} onValueChange={setUpdateVideo}>
+                    <SelectTrigger id="video-capture">
+                      <SelectValue placeholder="Select or capture video of patient" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {videoOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Video evidence of patient condition for hospital review
+                  </p>
                 </div>
-              )}
 
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="w-full" variant="default">
-                    Send Update to Hospital
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Send Update - {activePatient.patient_name}</DialogTitle>
-                    <DialogDescription>
-                      Provide real-time updates from the ambulance to the hospital
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 pt-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="update-text">Update Details</Label>
-                      <Textarea
-                        id="update-text"
-                        placeholder="e.g., Vitals unstable. Confirmed stroke symptoms."
-                        value={updateText}
-                        onChange={(e) => setUpdateText(e.target.value)}
-                        rows={3}
-                      />
-                    </div>
+                <div className="space-y-2">
+                  <Label htmlFor="symptom-update" className="text-base font-semibold">
+                    Current Symptoms Observed
+                  </Label>
+                  <Textarea
+                    id="symptom-update"
+                    placeholder="Updated symptoms and observations (e.g., Patient shows signs of stroke - facial drooping, slurred speech, weakness in right arm)"
+                    value={symptomUpdate}
+                    onChange={(e) => setSymptomUpdate(e.target.value)}
+                    rows={3}
+                  />
+                </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="update-video">Additional Video (Optional)</Label>
-                      <Select value={updateVideo} onValueChange={setUpdateVideo}>
-                        <SelectTrigger id="update-video">
-                          <SelectValue placeholder="Select video file" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {videoOptions.map(option => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                <div className="space-y-2">
+                  <Label htmlFor="actions-taken" className="text-base font-semibold">
+                    Actions Taken
+                  </Label>
+                  <Textarea
+                    id="actions-taken"
+                    placeholder="Medical interventions performed (e.g., Administered oxygen, secured airway, started IV line, given aspirin)"
+                    value={actionsTaken}
+                    onChange={(e) => setActionsTaken(e.target.value)}
+                    rows={3}
+                  />
+                </div>
 
-                    <Button onClick={handleSendUpdate} className="w-full">
-                      Send Update
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+                <div className="space-y-2">
+                  <Label htmlFor="additional-notes" className="text-base font-semibold">
+                    Additional Notes
+                  </Label>
+                  <Textarea
+                    id="additional-notes"
+                    placeholder="Any other relevant information for the hospital team"
+                    value={updateText}
+                    onChange={(e) => setUpdateText(e.target.value)}
+                    rows={2}
+                  />
+                </div>
+
+                <Button 
+                  onClick={handleSendUpdate} 
+                  className="w-full"
+                  disabled={!updateText || !actionsTaken}
+                >
+                  Send Update to Hospital & Clinician
+                </Button>
+                <p className="text-xs text-center text-muted-foreground">
+                  {activePatient.severity >= 8 
+                    ? "AI resource plan will be generated for hospital approval" 
+                    : "Update will be sent to hospital operations"}
+                </p>
+              </div>
             </CardContent>
           </Card>
         </>
