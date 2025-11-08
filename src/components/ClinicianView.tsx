@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Patient } from '@/types/patient';
 import { Bell, CheckCircle, Clock, MapPin, Edit3, Save, X } from 'lucide-react';
 
@@ -15,15 +17,15 @@ interface ClinicianViewProps {
 export function ClinicianView({ patients, onApprovePlan }: ClinicianViewProps) {
   const awaitingApproval = patients.filter(p => p.status === 'Awaiting Plan Approval');
   const [editingPlanId, setEditingPlanId] = useState<string | null>(null);
-  const [editedPlanText, setEditedPlanText] = useState('');
+  const [editedPlan, setEditedPlan] = useState<Patient['resource_plan']>(null);
 
   const handleApprove = (patient: Patient) => {
     console.log(`[ClinicianAgent]: Reviewing plan for patient ${patient.nhs_number}`);
     console.log(`[OpsAgent]: Plan for ${patient.nhs_number} Approved by staff. Notifying teams.`);
     
     // If plan was edited, update it before approving
-    if (editingPlanId === patient.queue_id && patient.resource_plan) {
-      patient.resource_plan.plan_text = editedPlanText;
+    if (editingPlanId === patient.queue_id && editedPlan) {
+      patient.resource_plan = editedPlan;
     }
     
     onApprovePlan(patient);
@@ -32,12 +34,16 @@ export function ClinicianView({ patients, onApprovePlan }: ClinicianViewProps) {
 
   const handleEditPlan = (patient: Patient) => {
     setEditingPlanId(patient.queue_id);
-    setEditedPlanText(patient.resource_plan?.plan_text || '');
+    setEditedPlan(patient.resource_plan || null);
   };
 
   const handleCancelEdit = () => {
     setEditingPlanId(null);
-    setEditedPlanText('');
+    setEditedPlan(null);
+  };
+
+  const handleSavePlan = () => {
+    setEditingPlanId(null);
   };
 
   const getSeverityColor = (severity: number) => {
@@ -133,14 +139,99 @@ export function ClinicianView({ patients, onApprovePlan }: ClinicianViewProps) {
                           )}
                         </div>
                         
-                        {editingPlanId === patient.queue_id ? (
-                          <div className="space-y-3">
-                            <Textarea
-                              value={editedPlanText}
-                              onChange={(e) => setEditedPlanText(e.target.value)}
-                              rows={12}
-                              className="font-mono text-sm"
-                            />
+                        {editingPlanId === patient.queue_id && editedPlan ? (
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="entrance">Entrance</Label>
+                                <Input
+                                  id="entrance"
+                                  value={editedPlan.entrance}
+                                  onChange={(e) => setEditedPlan({ ...editedPlan, entrance: e.target.value })}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="roomAssignment">Room Assignment</Label>
+                                <Input
+                                  id="roomAssignment"
+                                  value={editedPlan.roomAssignment || ''}
+                                  onChange={(e) => setEditedPlan({ ...editedPlan, roomAssignment: e.target.value })}
+                                />
+                              </div>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="priority">Priority Level</Label>
+                              <Input
+                                id="priority"
+                                value={editedPlan.priority || ''}
+                                onChange={(e) => setEditedPlan({ ...editedPlan, priority: e.target.value })}
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="specialists">Specialists Needed (one per line)</Label>
+                              <Textarea
+                                id="specialists"
+                                value={editedPlan.specialistsNeeded?.join('\n') || ''}
+                                onChange={(e) => setEditedPlan({ 
+                                  ...editedPlan, 
+                                  specialistsNeeded: e.target.value.split('\n').filter(s => s.trim()) 
+                                })}
+                                rows={3}
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="equipment">Equipment Required (one per line)</Label>
+                              <Textarea
+                                id="equipment"
+                                value={editedPlan.equipmentRequired?.join('\n') || ''}
+                                onChange={(e) => setEditedPlan({ 
+                                  ...editedPlan, 
+                                  equipmentRequired: e.target.value.split('\n').filter(s => s.trim()) 
+                                })}
+                                rows={3}
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="staffToContact">Staff to Contact (one per line)</Label>
+                              <Textarea
+                                id="staffToContact"
+                                value={editedPlan.staffToContact?.join('\n') || ''}
+                                onChange={(e) => setEditedPlan({ 
+                                  ...editedPlan, 
+                                  staffToContact: e.target.value.split('\n').filter(s => s.trim()) 
+                                })}
+                                rows={3}
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="areasToClear">Areas to Clear (one per line)</Label>
+                              <Textarea
+                                id="areasToClear"
+                                value={editedPlan.areasToClear?.join('\n') || ''}
+                                onChange={(e) => setEditedPlan({ 
+                                  ...editedPlan, 
+                                  areasToClear: e.target.value.split('\n').filter(s => s.trim()) 
+                                })}
+                                rows={3}
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="planText">Additional Plan Details</Label>
+                              <Textarea
+                                id="planText"
+                                value={editedPlan.plan_text}
+                                onChange={(e) => setEditedPlan({ ...editedPlan, plan_text: e.target.value })}
+                                rows={6}
+                                className="font-mono text-sm"
+                              />
+                            </div>
+
                             <div className="flex gap-2">
                               <Button 
                                 onClick={handleCancelEdit}
@@ -151,7 +242,7 @@ export function ClinicianView({ patients, onApprovePlan }: ClinicianViewProps) {
                                 Cancel
                               </Button>
                               <Button 
-                                onClick={() => setEditingPlanId(null)}
+                                onClick={handleSavePlan}
                                 size="sm"
                                 className="bg-primary"
                               >
