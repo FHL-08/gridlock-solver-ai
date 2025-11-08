@@ -22,14 +22,12 @@ const formatTime = (totalSeconds: number): string => {
 
 export function AmbulanceMap({ patientName, eta, dispatchTime }: AmbulanceMapProps) {
   const [progress, setProgress] = useState(0);
-  const [remainingSeconds, setRemainingSeconds] = useState(eta * 60);
 
   useEffect(() => {
     if (!dispatchTime) {
       // Fallback to simple animation if no dispatch time
       const interval = setInterval(() => {
         setProgress((prev) => Math.min(prev + 1, 100));
-        setRemainingSeconds((prev) => Math.max(prev - 0.5, 0));
       }, 500);
       return () => clearInterval(interval);
     }
@@ -40,24 +38,26 @@ export function AmbulanceMap({ patientName, eta, dispatchTime }: AmbulanceMapPro
     // Set initial state based on elapsed time
     const initialElapsed = Date.now() - dispatchTime;
     const initialProgress = Math.min((initialElapsed / totalDuration) * 100, 100);
-    const initialRemainingMs = Math.max(totalDuration - initialElapsed, 0);
-    const initialRemainingSeconds = initialRemainingMs / 1000;
     
     setProgress(initialProgress);
-    setRemainingSeconds(initialRemainingSeconds);
     
     const interval = setInterval(() => {
       const elapsed = Date.now() - dispatchTime;
       const newProgress = Math.min((elapsed / totalDuration) * 100, 100);
-      const remainingMs = Math.max(totalDuration - elapsed, 0);
-      const newRemainingSeconds = remainingMs / 1000;
       
       setProgress(newProgress);
-      setRemainingSeconds(newRemainingSeconds);
     }, 1000);
 
     return () => clearInterval(interval);
   }, [dispatchTime, eta]);
+
+  // Calculate remaining time based on progress and original ETA
+  const totalSeconds = eta * 60;
+  const remainingSeconds = Math.max(totalSeconds * (1 - progress / 100), 0);
+  
+  // Calculate remaining distance based on progress (assuming 4.5km total distance)
+  const totalDistance = 4.5;
+  const remainingDistance = totalDistance * (1 - progress / 100);
 
   // Calculate ambulance position along the route
   const ambulanceX = 10 + (progress * 0.8);
@@ -175,7 +175,7 @@ export function AmbulanceMap({ patientName, eta, dispatchTime }: AmbulanceMapPro
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Distance Remaining</p>
-                <p className="text-lg font-bold text-foreground">{((100 - progress) * 0.045).toFixed(1)} km</p>
+                <p className="text-lg font-bold text-foreground">{remainingDistance.toFixed(1)} km</p>
               </div>
             </div>
           </div>

@@ -32,7 +32,7 @@ const formatTime = (totalSeconds: number): string => {
 };
 
 const useRemainingTime = (eta: number, dispatchTime?: number) => {
-  const [remainingSeconds, setRemainingSeconds] = React.useState(eta * 60);
+  const [progress, setProgress] = React.useState(0);
   
   React.useEffect(() => {
     if (!dispatchTime) {
@@ -41,17 +41,21 @@ const useRemainingTime = (eta: number, dispatchTime?: number) => {
 
     const totalDuration = eta * 60 * 1000;
     const initialElapsed = Date.now() - dispatchTime;
-    const initialRemainingMs = Math.max(totalDuration - initialElapsed, 0);
-    setRemainingSeconds(initialRemainingMs / 1000);
+    const initialProgress = Math.min((initialElapsed / totalDuration) * 100, 100);
+    setProgress(initialProgress);
     
     const interval = setInterval(() => {
       const elapsed = Date.now() - dispatchTime;
-      const remainingMs = Math.max(totalDuration - elapsed, 0);
-      setRemainingSeconds(remainingMs / 1000);
+      const newProgress = Math.min((elapsed / totalDuration) * 100, 100);
+      setProgress(newProgress);
     }, 1000);
 
     return () => clearInterval(interval);
   }, [eta, dispatchTime]);
+  
+  // Calculate remaining time based on progress and original ETA
+  const totalSeconds = eta * 60;
+  const remainingSeconds = Math.max(totalSeconds * (1 - progress / 100), 0);
   
   return remainingSeconds;
 };
