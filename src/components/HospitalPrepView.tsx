@@ -19,14 +19,9 @@ interface HospitalPrepViewProps {
 }
 
 export function HospitalPrepView({ patients }: HospitalPrepViewProps) {
-  console.log('[HospitalPrepView] All patients:', patients);
-  console.log('[HospitalPrepView] Patient statuses:', patients.map(p => ({ name: p.patient_name, status: p.status, severity: p.severity })));
-  
   const highSeverityPatients = patients.filter(
     p => p.severity >= 8 && (p.status === 'In Transit' || p.status === 'Prep Ready')
   );
-  
-  console.log('[HospitalPrepView] High severity patients for map:', highSeverityPatients.map(p => ({ name: p.patient_name, status: p.status })));
 
   const getSeverityColor = (severity: number) => {
     if (severity >= 8) return 'bg-critical text-critical-foreground';
@@ -65,12 +60,12 @@ export function HospitalPrepView({ patients }: HospitalPrepViewProps) {
                 <Ambulance className="h-5 w-5 text-critical" />
                 <AlertDescription>
                   <div className="space-y-6">
-                    {/* Real-time Ambulance Tracking */}
-                    {patient.status === 'In Transit' && (
+                    {/* Real-time Ambulance Tracking - Show for In Transit and Prep Ready */}
+                    {(patient.status === 'In Transit' || patient.status === 'Prep Ready') && patient.eta_minutes && patient.eta_minutes > 0 && (
                       <div className="mb-4">
                         <AmbulanceMap 
                           patientName={patient.patient_name} 
-                          eta={patient.eta_minutes || 15} 
+                          eta={patient.eta_minutes} 
                         />
                       </div>
                     )}
