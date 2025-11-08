@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PatientView } from '@/components/PatientView';
 import { AmbulanceView } from '@/components/AmbulanceView';
+import { FirstResponderView } from '@/components/FirstResponderView';
 import { HospitalOpsView } from '@/components/HospitalOpsView';
 import { ClinicianView } from '@/components/ClinicianView';
 import { HospitalPrepView } from '@/components/HospitalPrepView';
@@ -159,8 +160,9 @@ const Index = () => {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="patient" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
             <TabsTrigger value="patient">Patient View</TabsTrigger>
+            <TabsTrigger value="firstresponder">First Responder</TabsTrigger>
             <TabsTrigger value="ambulance">Ambulance</TabsTrigger>
             <TabsTrigger value="hospital">Hospital Ops</TabsTrigger>
             <TabsTrigger value="preparation">Preparation</TabsTrigger>
@@ -172,6 +174,10 @@ const Index = () => {
               onPatientRegistered={handlePatientRegistered}
               currentQueueLength={patients.length}
             />
+          </TabsContent>
+
+          <TabsContent value="firstresponder" className="space-y-4">
+            <FirstResponderView patients={patients} />
           </TabsContent>
 
           <TabsContent value="ambulance" className="space-y-4">
