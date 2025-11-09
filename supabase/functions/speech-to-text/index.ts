@@ -31,7 +31,8 @@ serve(async (req) => {
     // Prepare form data
     const formData = new FormData();
     const blob = new Blob([binaryAudio], { type: 'audio/webm' });
-    formData.append('audio', blob, 'audio.webm');
+    formData.append('file', blob, 'audio.webm');
+    formData.append('model_id', 'scribe_v1');
 
     // Send to Eleven Labs Speech-to-Text API
     const response = await fetch('https://api.elevenlabs.io/v1/speech-to-text', {
