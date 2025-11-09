@@ -133,7 +133,7 @@ const Index = () => {
           <div className="flex items-center gap-3">
             <Activity className="h-8 w-8 text-primary" />
             <div>
-              <h1 className="text-2xl font-bold text-foreground">ER-Flow Command Center</h1>
+              <h1 className="text-2xl font-bold text-foreground">A&E Accelerate</h1>
               <p className="text-sm text-muted-foreground">Agentic AI for Emergency Care Optimization</p>
             </div>
           </div>
@@ -185,7 +185,7 @@ const Index = () => {
 
       <footer className="border-t mt-12 py-6">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>ER-Flow Demo • Hackathon Prototype • Multi-Agent AI System</p>
+          <p>A&E Accelerate Demo • Hackathon Prototype • Multi-Agent AI System</p>
           <p className="mt-1">Open browser console to view agent interaction logs</p>
         </div>
       </footer>
