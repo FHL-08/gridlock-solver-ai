@@ -245,15 +245,9 @@ const Index = () => {
               </div>
             </div>
             
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                <span>Powered by Lovable Cloud</span>
-              </div>
-              <div className="flex gap-2">
-                <div className="px-3 py-1 glass rounded-full text-xs font-medium text-accent">AI-Powered</div>
-                <div className="px-3 py-1 glass rounded-full text-xs font-medium text-success">Real-Time</div>
-              </div>
+            <div className="flex gap-2">
+              <div className="px-3 py-1 glass rounded-full text-xs font-medium text-accent">AI-Powered</div>
+              <div className="px-3 py-1 glass rounded-full text-xs font-medium text-success">Real-Time</div>
             </div>
           </div>
         </div>
