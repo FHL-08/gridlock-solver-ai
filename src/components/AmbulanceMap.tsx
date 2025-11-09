@@ -245,7 +245,7 @@ export function AmbulanceMap({ patientName, eta, dispatchTime, reverseDirection 
           </div>
 
           {/* Start point - Hospital or Patient depending on direction */}
-          <div className="absolute z-10" style={reverseDirection ? { right: '10%', top: '8%' } : { left: '6%', bottom: '12%' }}>
+          <div className="absolute z-10" style={reverseDirection ? { right: '12%', top: '18%' } : { left: '8%', bottom: '28%' }}>
             <div className="relative">
               {/* Glow effect */}
               <div className="absolute inset-0 bg-primary/20 rounded-full blur-lg w-12 h-12 -translate-x-1/4 -translate-y-1/4" />
@@ -267,7 +267,7 @@ export function AmbulanceMap({ patientName, eta, dispatchTime, reverseDirection 
           </div>
 
           {/* End point - Patient or Hospital depending on direction */}
-          <div className="absolute z-10" style={reverseDirection ? { left: '6%', bottom: '12%' } : { right: '10%', top: '8%' }}>
+          <div className="absolute z-10" style={reverseDirection ? { left: '8%', bottom: '28%' } : { right: '12%', top: '18%' }}>
             <div className="relative">
               {/* Glow effect */}
               <div className="absolute inset-0 bg-success/20 rounded-full blur-lg w-12 h-12 -translate-x-1/4 -translate-y-1/4" />
