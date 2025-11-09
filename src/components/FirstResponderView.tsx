@@ -11,6 +11,7 @@ import { AmbulanceMap } from '@/components/AmbulanceMap';
 import { ParamedicChat } from '@/components/ParamedicChat';
 import { videoOptions, mockHospitalDB } from '@/lib/mockData';
 import { VideoRecorder } from '@/components/VideoRecorder';
+import { VoiceRecorder } from '@/components/VoiceRecorder';
 import { User, Activity, FileText, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -284,6 +285,23 @@ export function FirstResponderView({ patients, onUpdatePatient }: FirstResponder
                 </div>
 
                 <VideoRecorder />
+
+                <div className="flex items-center justify-center">
+                  <VoiceRecorder 
+                    formType="responder"
+                    onTranscription={(jsonText) => {
+                      try {
+                        const data = JSON.parse(jsonText);
+                        setSymptomUpdate(data.symptoms || '');
+                        setActionsTaken(data.actions || '');
+                        setUpdateText(data.notes || '');
+                      } catch (e) {
+                        console.error('Failed to parse structured data:', e);
+                      }
+                    }}
+                    label="Record All Information"
+                  />
+                </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="symptom-update" className="text-base font-semibold">

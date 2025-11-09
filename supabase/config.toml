@@ -14,3 +14,9 @@ verify_jwt = false
 
 [functions.paramedic-chat]
 verify_jwt = false
+
+[functions.speech-to-text]
+verify_jwt = false
+
+[functions.structure-medical-text]
+verify_jwt = false

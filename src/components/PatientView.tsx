@@ -16,6 +16,7 @@ import { AmbulanceMap } from '@/components/AmbulanceMap';
 import { FirstAidInstructions } from '@/components/FirstAidInstructions';
 import { AmbulanceChat } from '@/components/AmbulanceChat';
 import { VideoRecorder } from '@/components/VideoRecorder';
+import { VoiceRecorder } from '@/components/VoiceRecorder';
 
 interface PatientViewProps {
   onPatientRegistered: (patient: Patient) => void;
@@ -321,10 +322,17 @@ export function PatientView({ onPatientRegistered, onUpdatePatient, patients, cu
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="symptoms">Describe Symptoms</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="symptoms">Describe Symptoms</Label>
+              <VoiceRecorder 
+                formType="patient"
+                onTranscription={(text) => setSymptoms(text)}
+                label="Use Voice"
+              />
+            </div>
             <Textarea
               id="symptoms"
-              placeholder="Please describe the symptoms or injury..."
+              placeholder="Please describe the symptoms or injury... or use voice input above"
               value={symptoms}
               onChange={(e) => setSymptoms(e.target.value)}
               rows={3}
