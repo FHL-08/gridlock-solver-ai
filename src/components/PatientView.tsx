@@ -291,8 +291,8 @@ export function PatientView({ onPatientRegistered, onUpdatePatient, patients, cu
 
       <Card>
         <CardHeader>
-          <CardTitle>Patient Information</CardTitle>
-          <CardDescription>Enter patient details for remote triage assessment</CardDescription>
+          <CardTitle>Enter Symptoms</CardTitle>
+          <CardDescription>Enter patient symptoms for remote triage assessment</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
