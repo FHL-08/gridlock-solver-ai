@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Video, VideoOff, Circle, Square } from 'lucide-react';
 
 export function VideoRecorder() {
   const [isRecording, setIsRecording] = useState(false);
   const [isCameraActive, setIsCameraActive] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -13,6 +15,7 @@ export function VideoRecorder() {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const startCamera = async () => {
+    setIsDialogOpen(true);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { facingMode: 'user' }, 
@@ -42,6 +45,7 @@ export function VideoRecorder() {
     setIsCameraActive(false);
     setIsRecording(false);
     setRecordingTime(0);
+    setIsDialogOpen(false);
     if (timerRef.current) {
       clearInterval(timerRef.current);
     }
@@ -75,76 +79,11 @@ export function VideoRecorder() {
   };
 
   return (
-    <Card className="border-2 border-primary/20">
-      <CardContent className="p-4 space-y-3">
-        <div className="flex items-center justify-between">
+    <>
+      <Card className="border-2 border-primary/20">
+        <CardContent className="p-4 space-y-3">
           <p className="text-sm font-semibold text-foreground">Live Camera Demo (for demonstration)</p>
-          {isRecording && (
-            <div className="flex items-center gap-2 text-critical animate-pulse">
-              <Circle className="h-3 w-3 fill-critical" />
-              <span className="text-sm font-mono">{formatTime(recordingTime)}</span>
-            </div>
-          )}
-        </div>
-
-        {error && (
-          <div className="text-sm text-destructive bg-destructive/10 p-2 rounded">
-            {error}
-          </div>
-        )}
-
-        {isCameraActive ? (
-          <div className="space-y-3">
-            <div className="relative bg-black rounded-lg overflow-hidden">
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className="w-full aspect-video object-cover"
-              />
-              {isRecording && (
-                <div className="absolute top-2 right-2 bg-critical text-critical-foreground px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
-                  <Circle className="h-2 w-2 fill-current animate-pulse" />
-                  REC
-                </div>
-              )}
-            </div>
-
-            <div className="flex gap-2">
-              {!isRecording ? (
-                <Button
-                  onClick={startRecording}
-                  size="sm"
-                  className="flex-1"
-                  variant="default"
-                >
-                  <Circle className="h-4 w-4 mr-2" />
-                  Start Recording
-                </Button>
-              ) : (
-                <Button
-                  onClick={stopRecording}
-                  size="sm"
-                  className="flex-1"
-                  variant="destructive"
-                >
-                  <Square className="h-4 w-4 mr-2" />
-                  Stop Recording
-                </Button>
-              )}
-              
-              <Button
-                onClick={stopCamera}
-                size="sm"
-                variant="outline"
-              >
-                <VideoOff className="h-4 w-4 mr-2" />
-                Close Camera
-              </Button>
-            </div>
-          </div>
-        ) : (
+          
           <Button
             onClick={startCamera}
             size="sm"
@@ -154,14 +93,85 @@ export function VideoRecorder() {
             <Video className="h-4 w-4 mr-2" />
             Activate Camera
           </Button>
-        )}
 
-        <p className="text-xs text-muted-foreground">
-          {isCameraActive 
-            ? "Camera is active. This demonstrates real-time video capability." 
-            : "Click to demonstrate live video assessment capability"}
-        </p>
-      </CardContent>
-    </Card>
+          <p className="text-xs text-muted-foreground">
+            Click to demonstrate live video assessment capability
+          </p>
+        </CardContent>
+      </Card>
+
+      <Dialog open={isDialogOpen} onOpenChange={(open) => {
+        if (!open) stopCamera();
+      }}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Video className="h-5 w-5" />
+              Live Video Assessment
+            </DialogTitle>
+            <DialogDescription>
+              {isRecording ? 'Recording patient assessment...' : 'Camera active - Ready to record'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {error && (
+              <div className="text-sm text-destructive bg-destructive/10 p-3 rounded">
+                {error}
+              </div>
+            )}
+
+            <div className="relative bg-black rounded-lg overflow-hidden">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full aspect-video object-cover"
+              />
+              {isRecording && (
+                <div className="absolute top-4 right-4 bg-critical text-critical-foreground px-3 py-2 rounded-full text-sm font-semibold flex items-center gap-2 shadow-lg">
+                  <Circle className="h-3 w-3 fill-current animate-pulse" />
+                  REC {formatTime(recordingTime)}
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              {!isRecording ? (
+                <Button
+                  onClick={startRecording}
+                  size="lg"
+                  className="flex-1"
+                  variant="default"
+                >
+                  <Circle className="h-5 w-5 mr-2" />
+                  Start Recording
+                </Button>
+              ) : (
+                <Button
+                  onClick={stopRecording}
+                  size="lg"
+                  className="flex-1"
+                  variant="destructive"
+                >
+                  <Square className="h-5 w-5 mr-2" />
+                  Stop Recording
+                </Button>
+              )}
+              
+              <Button
+                onClick={stopCamera}
+                size="lg"
+                variant="outline"
+              >
+                <VideoOff className="h-5 w-5 mr-2" />
+                Close
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
