@@ -85,6 +85,13 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
         },
       },
+      backgroundImage: {
+        'gradient-primary': 'linear-gradient(135deg, hsl(280 85% 60%) 0%, hsl(230 70% 55%) 100%)',
+        'gradient-accent': 'linear-gradient(135deg, hsl(199 89% 48%) 0%, hsl(280 85% 60%) 100%)',
+        'gradient-success': 'linear-gradient(135deg, hsl(142 76% 36%) 0%, hsl(199 89% 48%) 100%)',
+        'gradient-critical': 'linear-gradient(135deg, hsl(0 84% 60%) 0%, hsl(280 85% 60%) 100%)',
+        'gradient-surface': 'linear-gradient(135deg, hsl(222 47% 14%) 0%, hsl(217 33% 17%) 100%)',
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
