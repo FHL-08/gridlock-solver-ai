@@ -5,11 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Patient } from '@/types/patient';
 import { AmbulanceMap } from '@/components/AmbulanceMap';
 import { ParamedicChat } from '@/components/ParamedicChat';
-import { videoOptions, mockHospitalDB } from '@/lib/mockData';
+import { VideoRecorder } from '@/components/VideoRecorder';
+import { mockHospitalDB } from '@/lib/mockData';
 import { User, Activity, FileText, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -20,7 +20,8 @@ interface FirstResponderViewProps {
 
 export function FirstResponderView({ patients, onUpdatePatient }: FirstResponderViewProps) {
   const [updateText, setUpdateText] = useState('');
-  const [updateVideo, setUpdateVideo] = useState('');
+  const [updateVideo, setUpdateVideo] = useState('video_recorded.webm');
+  const [hasRecordedVideo, setHasRecordedVideo] = useState(false);
   const [symptomUpdate, setSymptomUpdate] = useState('');
   const [actionsTaken, setActionsTaken] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -113,7 +114,8 @@ export function FirstResponderView({ patients, onUpdatePatient }: FirstResponder
 
     onUpdatePatient(updatedPatient);
     setUpdateText('');
-    setUpdateVideo('');
+    setUpdateVideo('video_recorded.webm');
+    setHasRecordedVideo(false);
     setSymptomUpdate('');
     setActionsTaken('');
     setDialogOpen(false);
@@ -265,20 +267,23 @@ export function FirstResponderView({ patients, onUpdatePatient }: FirstResponder
                   <Label htmlFor="video-capture" className="text-base font-semibold">
                     Patient Video Documentation
                   </Label>
-                  <Select value={updateVideo} onValueChange={setUpdateVideo}>
-                    <SelectTrigger id="video-capture">
-                      <SelectValue placeholder="Select or capture video of patient" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {videoOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <VideoRecorder 
+                    onRecordingComplete={() => {
+                      setHasRecordedVideo(true);
+                      console.log('[EMSAgent]: Patient video documentation recorded');
+                    }}
+                    onRecordingStart={() => {
+                      console.log('[EMSAgent]: Recording patient video documentation');
+                    }}
+                  />
+                  {hasRecordedVideo && (
+                    <p className="text-sm text-success flex items-center gap-2">
+                      <span className="h-2 w-2 bg-success rounded-full"></span>
+                      Video documentation recorded successfully
+                    </p>
+                  )}
                   <p className="text-xs text-muted-foreground">
-                    Video evidence of patient condition for hospital review
+                    Capture real-time video of patient condition for hospital preparation
                   </p>
                 </div>
 
@@ -324,7 +329,7 @@ export function FirstResponderView({ patients, onUpdatePatient }: FirstResponder
                 <Button 
                   onClick={handleSendUpdate} 
                   className="w-full"
-                  disabled={!updateText || !actionsTaken || isSending}
+                  disabled={!updateText || !actionsTaken || !hasRecordedVideo || isSending}
                 >
                   {isSending ? (
                     <>

@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { mockPatientDB, videoOptions } from '@/lib/mockData';
+import { mockPatientDB } from '@/lib/mockData';
 import { calculateWaitTime } from '@/lib/aiSubstitutions';
 import { Patient } from '@/types/patient';
 import { AlertCircle, CheckCircle, Phone, Loader2, Clock, MapPin } from 'lucide-react';
@@ -15,6 +15,7 @@ import { HospitalSelector, Hospital } from '@/components/HospitalSelector';
 import { AmbulanceMap } from '@/components/AmbulanceMap';
 import { FirstAidInstructions } from '@/components/FirstAidInstructions';
 import { AmbulanceChat } from '@/components/AmbulanceChat';
+import { VideoRecorder } from '@/components/VideoRecorder';
 
 interface PatientViewProps {
   onPatientRegistered: (patient: Patient) => void;
@@ -27,7 +28,8 @@ export function PatientView({ onPatientRegistered, onUpdatePatient, patients, cu
   const [nhsNumber, setNhsNumber] = useState('');
   const [selectedHospital, setSelectedHospital] = useState('');
   const [symptoms, setSymptoms] = useState('');
-  const [selectedVideo, setSelectedVideo] = useState('');
+  const [selectedVideo, setSelectedVideo] = useState('video_recorded.webm');
+  const [hasRecordedVideo, setHasRecordedVideo] = useState(false);
   const [nearbyHospitals, setNearbyHospitals] = useState<Hospital[]>([]);
   const [result, setResult] = useState<{ 
     severity: number; 
@@ -48,8 +50,8 @@ export function PatientView({ onPatientRegistered, onUpdatePatient, patients, cu
   const [ambulanceDispatchTime, setAmbulanceDispatchTime] = useState<number>(0);
 
   const handleSubmit = async () => {
-    if (!nhsNumber || !selectedHospital || !symptoms || !selectedVideo) {
-      alert('Please fill in all fields');
+    if (!nhsNumber || !selectedHospital || !symptoms || !hasRecordedVideo) {
+      alert('Please fill in all fields and record a video assessment');
       return;
     }
 
@@ -331,19 +333,22 @@ export function PatientView({ onPatientRegistered, onUpdatePatient, patients, cu
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="video">Upload Video Assessment (Simulated)</Label>
-            <Select value={selectedVideo} onValueChange={setSelectedVideo}>
-              <SelectTrigger id="video">
-                <SelectValue placeholder="Select mock video file" />
-              </SelectTrigger>
-              <SelectContent>
-                {videoOptions.map(option => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="video">Video Assessment</Label>
+            <VideoRecorder 
+              onRecordingComplete={() => {
+                setHasRecordedVideo(true);
+                console.log('[System]: Video assessment recorded successfully');
+              }}
+              onRecordingStart={() => {
+                console.log('[System]: Video assessment recording started');
+              }}
+            />
+            {hasRecordedVideo && (
+              <p className="text-sm text-success flex items-center gap-2">
+                <span className="h-2 w-2 bg-success rounded-full"></span>
+                Video assessment recorded successfully
+              </p>
+            )}
           </div>
 
           {aiQuestion && (
