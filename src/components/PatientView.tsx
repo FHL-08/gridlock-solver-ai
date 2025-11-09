@@ -18,10 +18,12 @@ import { AmbulanceChat } from '@/components/AmbulanceChat';
 
 interface PatientViewProps {
   onPatientRegistered: (patient: Patient) => void;
+  onUpdatePatient: (patient: Patient) => void;
+  patients: Patient[];
   currentQueueLength: number;
 }
 
-export function PatientView({ onPatientRegistered, currentQueueLength }: PatientViewProps) {
+export function PatientView({ onPatientRegistered, onUpdatePatient, patients, currentQueueLength }: PatientViewProps) {
   const [nhsNumber, setNhsNumber] = useState('');
   const [selectedHospital, setSelectedHospital] = useState('');
   const [symptoms, setSymptoms] = useState('');
@@ -237,9 +239,17 @@ export function PatientView({ onPatientRegistered, currentQueueLength }: Patient
   };
 
   const handleArrived = () => {
-    // Update patient status to indicate they've arrived at the physical hospital
-    console.log(`[System]: Patient ${nhsNumber} marked as arrived at hospital`);
-    alert('Thank you! Hospital staff have been notified of your arrival.');
+    // Find the current patient and update their status
+    const currentPatient = patients.find(p => p.nhs_number === nhsNumber);
+    if (currentPatient) {
+      const updatedPatient: Patient = {
+        ...currentPatient,
+        status: 'In Waiting Lobby'
+      };
+      onUpdatePatient(updatedPatient);
+      console.log(`[System]: Patient ${nhsNumber} marked as arrived - status changed to "In Waiting Lobby"`);
+      alert('Thank you! Hospital staff have been notified of your arrival.');
+    }
   };
 
   const resetForm = () => {

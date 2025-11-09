@@ -45,6 +45,8 @@ export function HospitalOpsView({ patients }: HospitalOpsViewProps) {
         return 'bg-warning text-warning-foreground';
       case 'Awaiting Plan Approval':
         return 'bg-accent text-accent-foreground';
+      case 'In Waiting Lobby':
+        return 'bg-primary text-primary-foreground';
       default:
         return 'bg-secondary text-secondary-foreground';
     }

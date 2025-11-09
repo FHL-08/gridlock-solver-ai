@@ -153,6 +153,8 @@ const Index = () => {
           <TabsContent value="patient" className="space-y-4">
             <PatientView 
               onPatientRegistered={handlePatientRegistered}
+              onUpdatePatient={handleUpdatePatient}
+              patients={patients}
               currentQueueLength={patients.length}
             />
           </TabsContent>
