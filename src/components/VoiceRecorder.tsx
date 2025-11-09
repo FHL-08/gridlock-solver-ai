@@ -132,7 +132,7 @@ export function VoiceRecorder({ onTranscription, formType, label = "Voice Input"
         size="sm"
         onClick={isRecording ? stopRecording : startRecording}
         disabled={isProcessing}
-        className="gap-2"
+        className={`gap-2 ${!isRecording && !isProcessing ? 'bg-gradient-primary text-white border-transparent hover:shadow-glow' : ''}`}
       >
         {isProcessing ? (
           <>
