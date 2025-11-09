@@ -69,7 +69,10 @@ export function HospitalPrepView({ patients, onUpdatePatient }: HospitalPrepView
   );
 
   const handleHospitalArrival = (patient: Patient) => {
-    if (patient.status === 'Moving to Operation Theatre' && onUpdatePatient && !patient.has_arrived_at_hospital) {
+    // Trigger arrival for any transit status when timer reaches 0
+    const validTransitStatuses = ['Prep Ready', 'In Transit', 'Moving to Operation Theatre'];
+    
+    if (validTransitStatuses.includes(patient.status) && onUpdatePatient && !patient.has_arrived_at_hospital) {
       // First, set status to 'Arrived' to show the ARRIVED message
       const arrivedPatient: Patient = {
         ...patient,
