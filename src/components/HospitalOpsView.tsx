@@ -142,7 +142,7 @@ export function HospitalOpsView({ patients }: HospitalOpsViewProps) {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className={getStatusColor(patient.status)}>
-                          {patient.status === 'In Operation Theatre' ? 'Undergoing Operation' : patient.status}
+                          {patient.status === 'In Operation Theatre' ? 'Operation Ongoing' : patient.status}
                         </Badge>
                       </TableCell>
                       <TableCell>
