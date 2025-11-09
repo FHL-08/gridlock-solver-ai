@@ -128,10 +128,10 @@ export function AmbulanceMap({ patientName, eta, dispatchTime, reverseDirection 
   const ambulanceY = (pathPoint.y / 400) * 100; // Convert to percentage of viewBox
 
   return (
-    <Card className="overflow-hidden border-2 border-critical/20">
+    <Card className="overflow-hidden border-2 border-critical/20 glass-strong">
       <div className="relative w-full aspect-video bg-gradient-to-br from-primary/5 via-background to-accent/5">
         {/* Street grid background */}
-        <svg className="absolute inset-0 w-full h-full opacity-20" style={{ zIndex: 0 }} preserveAspectRatio="none">
+        <svg className="absolute inset-0 w-full h-full opacity-10" style={{ zIndex: 0 }} preserveAspectRatio="none">
           <defs>
             <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
               <path d="M 40 0 L 0 0 0 40" fill="none" stroke="hsl(var(--muted-foreground))" strokeWidth="0.5"/>
@@ -140,8 +140,34 @@ export function AmbulanceMap({ patientName, eta, dispatchTime, reverseDirection 
           <rect width="100%" height="100%" fill="url(#grid)" />
         </svg>
 
+        {/* Top Info Bar */}
+        <div className="absolute top-0 left-0 right-0 z-30 bg-gradient-to-b from-background/95 to-background/60 backdrop-blur-sm border-b border-border/50 p-3">
+          <div className="flex items-center justify-between max-w-full">
+            <div className="flex items-center gap-3">
+              <div className="bg-critical/10 p-2 rounded-lg border border-critical/20">
+                <Navigation className="h-4 w-4 text-critical animate-pulse" />
+              </div>
+              <div>
+                <p className="font-bold text-sm text-foreground">{patientName}</p>
+                <p className="text-xs text-muted-foreground">Emergency Transport - Code Red</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              {/* Live indicator */}
+              <div className="flex items-center gap-2 px-2 py-1 bg-critical/10 rounded-lg border border-critical/20">
+                <div className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-critical opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-critical"></span>
+                </div>
+                <span className="text-xs font-semibold text-critical">LIVE</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Map content */}
-        <div className="absolute inset-0 p-4 md:p-6" style={{ zIndex: 1 }}>
+        <div className="absolute inset-0 pt-20 pb-24" style={{ zIndex: 1 }}>
           <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid meet" viewBox="0 0 800 400">
             <defs>
               {/* Glow filter for ambulance */}
@@ -187,8 +213,8 @@ export function AmbulanceMap({ patientName, eta, dispatchTime, reverseDirection 
             />
             
             {/* Waypoint markers */}
-            <circle cx="300" cy="220" r="6" fill="hsl(var(--primary))" opacity="0.6" />
-            <circle cx="500" cy="160" r="6" fill="hsl(var(--primary))" opacity="0.6" />
+            <circle cx="300" cy="220" r="5" fill="hsl(var(--primary))" opacity="0.5" />
+            <circle cx="500" cy="160" r="5" fill="hsl(var(--primary))" opacity="0.5" />
           </svg>
 
           {/* Ambulance (moving) */}
@@ -198,143 +224,94 @@ export function AmbulanceMap({ patientName, eta, dispatchTime, reverseDirection 
               left: `${ambulanceX}%`, 
               top: `${ambulanceY}%`,
               transform: 'translate(-50%, -50%)',
-              zIndex: 10,
+              zIndex: 20,
             }}
           >
             {/* Pulse rings */}
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="absolute w-20 h-20 bg-critical/30 rounded-full animate-ping" />
-              <div className="absolute w-16 h-16 bg-critical/40 rounded-full animate-pulse" />
+              <div className="absolute w-16 h-16 bg-critical/20 rounded-full animate-ping" />
+              <div className="absolute w-12 h-12 bg-critical/30 rounded-full animate-pulse" />
             </div>
             
             {/* Ambulance icon */}
-            <div className="relative bg-critical text-critical-foreground rounded-full p-4 shadow-2xl border-4 border-critical-foreground/20">
-              <Navigation className="h-8 w-8" style={{ transform: 'rotate(45deg)' }} />
+            <div className="relative bg-critical text-critical-foreground rounded-full p-3 shadow-premium border-2 border-background">
+              <Navigation className="h-6 w-6" style={{ transform: 'rotate(45deg)' }} />
               
               {/* Speed indicator */}
-              <div className="absolute -top-2 -right-2 bg-background border-2 border-critical rounded-full p-1">
-                <Radio className="h-3 w-3 text-critical animate-pulse" />
-              </div>
-            </div>
-            
-            {/* Ambulance label */}
-            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 whitespace-nowrap">
-              <div className="bg-background/95 backdrop-blur-sm px-3 py-1 rounded-full border border-critical/30 shadow-lg">
-                <p className="text-xs font-semibold text-foreground">En Route</p>
+              <div className="absolute -top-1 -right-1 bg-background border-2 border-critical rounded-full p-0.5">
+                <Radio className="h-2 w-2 text-critical animate-pulse" />
               </div>
             </div>
           </div>
 
           {/* Start point - Hospital or Patient depending on direction */}
-          <div className="absolute" style={reverseDirection ? { right: '8%', top: '15%' } : { left: '5%', bottom: '20%' }}>
+          <div className="absolute z-10" style={reverseDirection ? { right: '10%', top: '8%' } : { left: '6%', bottom: '12%' }}>
             <div className="relative">
               {/* Glow effect */}
-              <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl w-16 h-16 -translate-x-1/4 -translate-y-1/4" />
+              <div className="absolute inset-0 bg-primary/20 rounded-full blur-lg w-12 h-12 -translate-x-1/4 -translate-y-1/4" />
               
               {/* Icon */}
-              <div className="relative bg-primary text-primary-foreground rounded-full p-5 shadow-2xl border-4 border-primary-foreground/20">
-                <MapPin className="h-9 w-9" />
+              <div className="relative bg-primary text-primary-foreground rounded-full p-3 shadow-premium border-2 border-background">
+                <MapPin className="h-5 w-5" />
               </div>
               
-              {/* Label */}
-              <div className="absolute top-full mt-3 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                <div className="bg-primary/10 backdrop-blur-sm px-4 py-2 rounded-lg border border-primary/40 shadow-lg">
-                  {reverseDirection ? (
-                    <>
-                      <p className="text-sm font-bold text-primary">City Hospital</p>
-                      <p className="text-xs text-muted-foreground">Emergency Bay A</p>
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-sm font-bold text-primary">{patientName}</p>
-                      <p className="text-xs text-muted-foreground">Patient Location</p>
-                    </>
-                  )}
+              {/* Compact Label */}
+              <div className="absolute top-full mt-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                <div className="glass px-2 py-1 rounded-md border border-primary/30 shadow-lg">
+                  <p className="text-xs font-semibold text-primary">
+                    {reverseDirection ? "Hospital" : patientName}
+                  </p>
                 </div>
               </div>
             </div>
           </div>
 
           {/* End point - Patient or Hospital depending on direction */}
-          <div className="absolute" style={reverseDirection ? { left: '5%', bottom: '20%' } : { right: '8%', top: '15%' }}>
+          <div className="absolute z-10" style={reverseDirection ? { left: '6%', bottom: '12%' } : { right: '10%', top: '8%' }}>
             <div className="relative">
               {/* Glow effect */}
-              <div className="absolute inset-0 bg-success/20 rounded-full blur-xl w-16 h-16 -translate-x-1/4 -translate-y-1/4" />
+              <div className="absolute inset-0 bg-success/20 rounded-full blur-lg w-12 h-12 -translate-x-1/4 -translate-y-1/4" />
               
               {/* Icon */}
-              <div className="relative bg-success text-success-foreground rounded-full p-5 shadow-2xl border-4 border-success-foreground/20">
-                <MapPin className="h-9 w-9" />
+              <div className="relative bg-success text-success-foreground rounded-full p-3 shadow-premium border-2 border-background">
+                <MapPin className="h-5 w-5" />
               </div>
               
-              {/* Label */}
-              <div className="absolute top-full mt-3 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                <div className="bg-success/10 backdrop-blur-sm px-4 py-2 rounded-lg border border-success/40 shadow-lg">
-                  {reverseDirection ? (
-                    <>
-                      <p className="text-sm font-bold text-success">{patientName}</p>
-                      <p className="text-xs text-muted-foreground">Patient Location</p>
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-sm font-bold text-success">City Hospital</p>
-                      <p className="text-xs text-muted-foreground">Emergency Bay A</p>
-                    </>
-                  )}
+              {/* Compact Label */}
+              <div className="absolute top-full mt-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                <div className="glass px-2 py-1 rounded-md border border-success/30 shadow-lg">
+                  <p className="text-xs font-semibold text-success">
+                    {reverseDirection ? patientName : "Hospital"}
+                  </p>
                 </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Distance indicator */}
-          <div className="absolute top-6 left-6 bg-background/90 backdrop-blur-sm px-4 py-3 rounded-lg border border-border shadow-lg">
-            <div className="flex items-center gap-3">
-              <div className="bg-primary/10 p-2 rounded-full">
-                <Navigation className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Distance Remaining</p>
-                <p className="text-lg font-bold text-foreground">{remainingDistance.toFixed(1)} km</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Info Overlay */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background via-background/98 to-transparent p-4 border-t border-border/50" style={{ zIndex: 2 }}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-critical/10 p-2 rounded-full">
-                <Navigation className="h-5 w-5 text-critical animate-pulse" />
-              </div>
+        {/* Bottom Info Bar */}
+        <div className="absolute bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-background/95 to-background/60 backdrop-blur-sm border-t border-border/50 p-3" style={{ zIndex: 2 }}>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2 glass px-3 py-1.5 rounded-lg border border-border/50">
+              <Navigation className="h-4 w-4 text-primary" />
               <div>
-                <p className="font-bold text-foreground">{patientName}</p>
-                <p className="text-xs text-muted-foreground">Emergency Transport - Code Red</p>
+                <p className="text-xs text-muted-foreground">Distance</p>
+                <p className="text-sm font-bold text-foreground">{remainingDistance.toFixed(1)} km</p>
               </div>
             </div>
             
-            <div className="flex items-center gap-4">
-              {/* Live indicator */}
-              <div className="flex items-center gap-2 px-3 py-2 bg-critical/10 rounded-lg">
-                <div className="relative flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-critical opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-critical"></span>
-                </div>
-                <span className="text-xs font-semibold text-critical">LIVE</span>
-              </div>
-              
-              {/* ETA */}
-              <div className="flex items-center gap-2 bg-critical/10 px-4 py-2 rounded-lg border border-critical/20">
-                <Clock className="h-5 w-5 text-critical" />
-                <div>
-                  <p className="text-xs text-muted-foreground">ETA</p>
-                  <p className="text-xl font-bold text-critical">{formatTime(remainingSeconds)}</p>
-                </div>
+            {/* ETA */}
+            <div className="flex items-center gap-2 glass px-3 py-1.5 rounded-lg border border-critical/30">
+              <Clock className="h-4 w-4 text-critical" />
+              <div>
+                <p className="text-xs text-muted-foreground">ETA</p>
+                <p className="text-sm font-bold text-critical">{formatTime(remainingSeconds)}</p>
               </div>
             </div>
           </div>
           
           {/* Progress bar */}
-          <div className="mt-3 w-full bg-muted/50 rounded-full h-2 overflow-hidden">
+          <div className="w-full bg-muted/30 rounded-full h-1.5 overflow-hidden border border-border/30">
             <div 
               className="h-full bg-gradient-to-r from-primary via-critical to-success transition-all duration-500 ease-linear relative"
               style={{ width: `${progress}%` }}
@@ -342,8 +319,9 @@ export function AmbulanceMap({ patientName, eta, dispatchTime, reverseDirection 
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse" />
             </div>
           </div>
-          <div className="flex justify-between mt-1 text-xs text-muted-foreground">
+          <div className="flex justify-between mt-1 text-[10px] text-muted-foreground px-1">
             <span>Dispatched</span>
+            <span>{progress.toFixed(0)}%</span>
             <span>Arriving</span>
           </div>
         </div>
