@@ -128,11 +128,11 @@ export function VoiceRecorder({ onTranscription, formType, label = "Voice Input"
     <div className="flex items-center gap-2">
       <Button
         type="button"
-        variant={isRecording ? "destructive" : "outline"}
+        variant={isRecording ? "destructive" : "default"}
         size="sm"
         onClick={isRecording ? stopRecording : startRecording}
         disabled={isProcessing}
-        className={`gap-2 ${!isRecording && !isProcessing ? 'bg-gradient-primary text-white border-transparent hover:shadow-glow' : ''}`}
+        className="gap-2"
       >
         {isProcessing ? (
           <>

@@ -130,7 +130,6 @@ export function ClinicianView({ patients, onApprovePlan }: ClinicianViewProps) {
                           {editingPlanId !== patient.queue_id && (
                             <Button 
                               onClick={() => handleEditPlan(patient)}
-                              variant="outline"
                               size="sm"
                             >
                               <Edit3 className="mr-2 h-4 w-4" />
@@ -235,7 +234,7 @@ export function ClinicianView({ patients, onApprovePlan }: ClinicianViewProps) {
                             <div className="flex gap-2">
                               <Button 
                                 onClick={handleCancelEdit}
-                                variant="outline"
+                                variant="secondary"
                                 size="sm"
                               >
                                 <X className="mr-2 h-4 w-4" />

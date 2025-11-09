@@ -279,7 +279,7 @@ export function PatientView({ onPatientRegistered, onUpdatePatient, patients, cu
           <p className="text-muted-foreground">TriageAgent - Remote Assessment & Registration</p>
         </div>
         {(dispatchConfirmed || registrationComplete) && (
-          <Button onClick={resetForm} variant="outline" size="sm">
+          <Button onClick={resetForm} variant="secondary" size="sm">
             Reset Form
           </Button>
         )}
@@ -428,7 +428,7 @@ export function PatientView({ onPatientRegistered, onUpdatePatient, patients, cu
                   <Phone className="mr-2 h-4 w-4" />
                   Confirm 999 Dispatch
                 </Button>
-                <Button onClick={resetForm} variant="outline">
+                <Button onClick={resetForm} variant="secondary">
                   Cancel
                 </Button>
               </div>
@@ -473,7 +473,7 @@ export function PatientView({ onPatientRegistered, onUpdatePatient, patients, cu
             patientContext={`Patient symptoms: ${symptoms}. Severity: ${result.severity}. First-aid instructions: ${firstAidInstructions?.substring(0, 200) || 'N/A'}...`}
           />
 
-          <Button onClick={resetForm} variant="outline" className="w-full">
+          <Button onClick={resetForm} className="w-full">
             Return to Triage
           </Button>
         </div>
@@ -558,7 +558,7 @@ export function PatientView({ onPatientRegistered, onUpdatePatient, patients, cu
             </CardContent>
           </Card>
 
-          <Button onClick={resetForm} variant="outline" className="w-full">
+          <Button onClick={resetForm} className="w-full">
             Register Another Patient
           </Button>
         </div>

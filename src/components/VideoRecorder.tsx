@@ -88,7 +88,6 @@ export function VideoRecorder() {
             onClick={startCamera}
             size="sm"
             className="w-full"
-            variant="outline"
           >
             <Video className="h-4 w-4 mr-2" />
             Activate Camera
@@ -163,7 +162,7 @@ export function VideoRecorder() {
               <Button
                 onClick={stopCamera}
                 size="lg"
-                variant="outline"
+                variant="secondary"
               >
                 <VideoOff className="h-5 w-5 mr-2" />
                 Close
