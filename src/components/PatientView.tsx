@@ -15,6 +15,7 @@ import { HospitalSelector, Hospital } from '@/components/HospitalSelector';
 import { AmbulanceMap } from '@/components/AmbulanceMap';
 import { FirstAidInstructions } from '@/components/FirstAidInstructions';
 import { AmbulanceChat } from '@/components/AmbulanceChat';
+import { VideoRecorder } from '@/components/VideoRecorder';
 
 interface PatientViewProps {
   onPatientRegistered: (patient: Patient) => void;
@@ -345,6 +346,8 @@ export function PatientView({ onPatientRegistered, onUpdatePatient, patients, cu
               </SelectContent>
             </Select>
           </div>
+
+          <VideoRecorder />
 
           {aiQuestion && (
             <div className="p-6 bg-gradient-to-br from-primary/5 to-accent/5 rounded-lg border-2 border-primary/20 space-y-4">

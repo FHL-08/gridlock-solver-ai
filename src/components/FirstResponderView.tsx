@@ -10,6 +10,7 @@ import { Patient } from '@/types/patient';
 import { AmbulanceMap } from '@/components/AmbulanceMap';
 import { ParamedicChat } from '@/components/ParamedicChat';
 import { videoOptions, mockHospitalDB } from '@/lib/mockData';
+import { VideoRecorder } from '@/components/VideoRecorder';
 import { User, Activity, FileText, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -281,6 +282,8 @@ export function FirstResponderView({ patients, onUpdatePatient }: FirstResponder
                     Video evidence of patient condition for hospital review
                   </p>
                 </div>
+
+                <VideoRecorder />
 
                 <div className="space-y-2">
                   <Label htmlFor="symptom-update" className="text-base font-semibold">
