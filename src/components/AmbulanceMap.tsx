@@ -65,10 +65,15 @@ export function AmbulanceMap({ patientName, eta, dispatchTime, reverseDirection 
   // Trigger arrival callback when ambulance reaches destination
   useEffect(() => {
     if (progress >= 100 && !hasArrived && onArrival) {
+      console.log(`[AmbulanceMap DEBUG]: Progress reached 100%, triggering onArrival callback for ${patientName}`);
       setHasArrived(true);
       onArrival();
+    } else if (progress >= 100 && hasArrived) {
+      console.log(`[AmbulanceMap DEBUG]: Progress at 100% but hasArrived already true for ${patientName}`);
+    } else if (progress >= 100 && !onArrival) {
+      console.log(`[AmbulanceMap DEBUG]: Progress at 100% but no onArrival callback provided for ${patientName}`);
     }
-  }, [progress, hasArrived, onArrival]);
+  }, [progress, hasArrived, onArrival, patientName]);
 
   // Calculate ambulance position along the bezier curve path
   const getPointOnPath = (t: number, reverse: boolean) => {

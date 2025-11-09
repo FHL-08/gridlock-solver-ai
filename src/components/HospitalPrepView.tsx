@@ -69,10 +69,16 @@ export function HospitalPrepView({ patients, onUpdatePatient }: HospitalPrepView
   );
 
   const handleHospitalArrival = (patient: Patient) => {
+    console.log(`[HospitalPrepView DEBUG]: handleHospitalArrival called for ${patient.patient_name}`);
+    console.log(`[HospitalPrepView DEBUG]: Patient status: ${patient.status}`);
+    console.log(`[HospitalPrepView DEBUG]: has_arrived_at_hospital: ${patient.has_arrived_at_hospital}`);
+    console.log(`[HospitalPrepView DEBUG]: onUpdatePatient exists: ${!!onUpdatePatient}`);
+    
     // Trigger arrival for any transit status when timer reaches 0
     const validTransitStatuses = ['Prep Ready', 'In Transit', 'Moving to Operation Theatre'];
     
     if (validTransitStatuses.includes(patient.status) && onUpdatePatient && !patient.has_arrived_at_hospital) {
+      console.log(`[HospitalPrepView DEBUG]: All conditions met, updating patient to ARRIVED status`);
       // First, set status to 'Arrived' to show the ARRIVED message
       const arrivedPatient: Patient = {
         ...patient,
@@ -84,6 +90,7 @@ export function HospitalPrepView({ patients, onUpdatePatient }: HospitalPrepView
       
       // After 3 seconds, set the has_arrived_at_hospital flag to trigger transition to Operation Theatre
       setTimeout(() => {
+        console.log(`[HospitalPrepView DEBUG]: 3 seconds passed, setting has_arrived_at_hospital flag`);
         const transitionPatient: Patient = {
           ...arrivedPatient,
           has_arrived_at_hospital: true
@@ -91,6 +98,17 @@ export function HospitalPrepView({ patients, onUpdatePatient }: HospitalPrepView
         onUpdatePatient(transitionPatient);
         console.log(`[System]: Transitioning ${patient.patient_name} to Operation Theatre (has_arrived_at_hospital flag set)`);
       }, 3000);
+    } else {
+      console.log(`[HospitalPrepView DEBUG]: Conditions NOT met for arrival transition`);
+      if (!validTransitStatuses.includes(patient.status)) {
+        console.log(`[HospitalPrepView DEBUG]: - Status ${patient.status} not in valid statuses: ${validTransitStatuses.join(', ')}`);
+      }
+      if (!onUpdatePatient) {
+        console.log(`[HospitalPrepView DEBUG]: - onUpdatePatient callback is missing`);
+      }
+      if (patient.has_arrived_at_hospital) {
+        console.log(`[HospitalPrepView DEBUG]: - has_arrived_at_hospital is already true`);
+      }
     }
   };
 
