@@ -14,29 +14,26 @@ serve(async (req) => {
   try {
     const { patient, hospitalCapacity } = await req.json();
     
-    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-    if (!OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY not configured');
+    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+    if (!GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY not configured');
     }
 
     console.log('[OpsAgent]: Generating resource plan for patient', patient.nhs_number);
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
+        contents: [
           {
-            role: 'system',
-            content: `You are an expert hospital operations AI agent. Your role is to optimize patient flow and resource allocation. Generate detailed operational plans for incoming emergency patients.`
-          },
-          {
-            role: 'user',
-            content: `Create a comprehensive resource allocation plan for this incoming patient:
+            parts: [
+              {
+                text: `You are an expert hospital operations AI agent. Your role is to optimize patient flow and resource allocation. Generate detailed operational plans for incoming emergency patients.
+
+Create a comprehensive resource allocation plan for this incoming patient:
 
 Patient Details:
 - Name: ${patient.patient_name}
@@ -68,22 +65,26 @@ Respond in JSON format:
   "planText": "step-by-step plan in numbered list format",
   "priority": "HIGH/MEDIUM/LOW"
 }`
+              }
+            ]
           }
         ],
-        response_format: { type: "json_object" },
-        temperature: 0.3,
-        max_tokens: 1000,
+        generationConfig: {
+          temperature: 0.3,
+          maxOutputTokens: 1000,
+          responseMimeType: "application/json"
+        }
       }),
     });
 
     const data = await response.json();
     
     if (!response.ok) {
-      console.error('OpenAI API error:', data);
-      throw new Error(`OpenAI API error: ${JSON.stringify(data)}`);
+      console.error('Gemini API error:', data);
+      throw new Error(`Gemini API error: ${JSON.stringify(data)}`);
     }
 
-    let responseText = data.choices[0].message.content;
+    let responseText = data.candidates[0].content.parts[0].text;
     
     // Strip markdown code blocks if present
     if (responseText.includes('```')) {
