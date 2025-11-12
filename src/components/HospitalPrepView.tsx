@@ -303,7 +303,7 @@ export function HospitalPrepView({ patients, onUpdatePatient }: HospitalPrepView
                         <div className="p-4 bg-accent/10 rounded-md border border-accent/30">
                           <p className="font-semibold mb-3">Detailed Preparation Plan:</p>
                           <pre className="text-sm whitespace-pre-wrap text-foreground">
-                            {patient.resource_plan.plan_text}
+                            {patient.resource_plan.planText}
                           </pre>
                         </div>
                       </>

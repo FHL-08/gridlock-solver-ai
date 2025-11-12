@@ -224,8 +224,8 @@ export function ClinicianView({ patients, onApprovePlan }: ClinicianViewProps) {
                               <Label htmlFor="planText">Additional Plan Details</Label>
                               <Textarea
                                 id="planText"
-                                value={editedPlan.plan_text}
-                                onChange={(e) => setEditedPlan({ ...editedPlan, plan_text: e.target.value })}
+                                value={editedPlan.planText}
+                                onChange={(e) => setEditedPlan({ ...editedPlan, planText: e.target.value })}
                                 rows={6}
                                 className="font-mono text-sm"
                               />
@@ -279,7 +279,7 @@ export function ClinicianView({ patients, onApprovePlan }: ClinicianViewProps) {
                               )}
                             </div>
                             <pre className="text-sm whitespace-pre-wrap text-foreground p-3 bg-background rounded border">
-                              {patient.resource_plan.plan_text}
+                              {patient.resource_plan.planText}
                             </pre>
                           </>
                         )}

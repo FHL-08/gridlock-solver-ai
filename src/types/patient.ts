@@ -10,7 +10,7 @@ export interface Patient {
   prep_tab_dispatch_time?: number;
   has_arrived_at_hospital?: boolean;
   resource_plan?: {
-    plan_text: string;
+    planText: string;
     entrance: string;
     roomAssignment?: string;
     specialistsNeeded?: string[];
