@@ -300,11 +300,18 @@ export function HospitalPrepView({ patients, onUpdatePatient }: HospitalPrepView
                         )}
 
                         {/* Detailed Plan */}
-                        <div className="p-4 bg-accent/10 rounded-md border border-accent/30">
-                          <p className="font-semibold mb-3">Detailed Preparation Plan:</p>
-                          <pre className="text-sm whitespace-pre-wrap text-foreground">
-                            {patient.resource_plan.planText}
-                          </pre>
+                        <div className="p-4 bg-card rounded-md border">
+                          <p className="font-semibold mb-3 flex items-center gap-2">
+                            <Navigation className="h-4 w-4" />
+                            Detailed Preparation Plan:
+                          </p>
+                          <div className="text-sm text-foreground leading-relaxed space-y-2">
+                            {patient.resource_plan.planText.split('\n').map((line: string, idx: number) => (
+                              <p key={idx} className={line.trim() ? '' : 'h-2'}>
+                                {line}
+                              </p>
+                            ))}
+                          </div>
                         </div>
                       </>
                     )}

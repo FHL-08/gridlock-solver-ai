@@ -278,9 +278,13 @@ export function ClinicianView({ patients, onApprovePlan }: ClinicianViewProps) {
                                 </div>
                               )}
                             </div>
-                            <pre className="text-sm whitespace-pre-wrap text-foreground p-3 bg-background rounded border">
-                              {patient.resource_plan.planText}
-                            </pre>
+                            <div className="text-sm text-foreground leading-relaxed space-y-2 p-3 bg-background rounded border">
+                              {patient.resource_plan.planText.split('\n').map((line: string, idx: number) => (
+                                <p key={idx} className={line.trim() ? '' : 'h-2'}>
+                                  {line}
+                                </p>
+                              ))}
+                            </div>
                           </>
                         )}
                       </div>
