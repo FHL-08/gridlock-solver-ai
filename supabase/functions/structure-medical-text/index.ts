@@ -1,6 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { checkRateLimit, getClientIdentifier, createRateLimitResponse } from '../_shared/rateLimit.ts'
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
+
+const structureSchema = z.object({
+  text: z.string().min(1, "Text is required").max(5000, "Text must be less than 5000 characters"),
+  formType: z.enum(['patient', 'responder'], { errorMap: () => ({ message: "Form type must be 'patient' or 'responder'" }) })
+})
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,15 +26,11 @@ serve(async (req) => {
   }
 
   try {
-    const { text, formType } = await req.json();
+    const requestBody = await req.json();
+    const validated = structureSchema.parse(requestBody);
+    const { text, formType } = validated;
     
-    if (!text) {
-      throw new Error('No text provided');
-    }
-
-    if (!formType || !['patient', 'responder'].includes(formType)) {
-      throw new Error('Invalid form type. Must be "patient" or "responder"');
-    }
+    console.log(`[Structure Text]: Request from ${clientId} - type: ${formType}, text length: ${text.length}`);
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
@@ -120,7 +122,18 @@ Return in JSON format:
     );
 
   } catch (error) {
-    console.error('[StructureText]: Error:', error);
+    console.error(`[Structure Text]: Error from ${clientId}:`, error);
+    
+    if (error instanceof z.ZodError) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid input', details: error.errors }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+    
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       {
