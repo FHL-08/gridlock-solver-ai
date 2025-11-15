@@ -134,7 +134,7 @@ Simulates a low-priority case and shows how the OpsAgent correctly de-prioritise
 Demonstrates the full, life-saving multi-agent workflow with **realistic map tracking**.
 
 1. Return to **Patient View** (Reset Form if needed).  
-2. **NHS Number:** `9912003072` (*John Smith*).  
+2. **NHS Number:** `9912003072`(*John Smith*).
 3. **Select Hospital:** "City General Hospital".  
 4. **Describe Symptoms:** "My father's face is drooping and he can't speak."  
 5. **Upload Video:** *Suspected Stroke Symptoms (Mock Video)*.  
