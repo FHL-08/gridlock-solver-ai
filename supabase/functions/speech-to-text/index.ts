@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { checkRateLimit, getClientIdentifier, createRateLimitResponse } from '../_shared/rateLimit.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -39,6 +40,13 @@ function processBase64Chunks(base64String: string, chunkSize = 32768) {
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
+  }
+
+  // Rate limiting: 5 requests per minute per IP (transcription is resource-intensive)
+  const clientId = getClientIdentifier(req);
+  if (!checkRateLimit(clientId, 5, 60000)) {
+    console.log(`Rate limit exceeded for client: ${clientId}`);
+    return createRateLimitResponse(corsHeaders, 60);
   }
 
   try {

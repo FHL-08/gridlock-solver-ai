@@ -1,4 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { checkRateLimit, getClientIdentifier, createRateLimitResponse } from '../_shared/rateLimit.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,6 +9,13 @@ const corsHeaders = {
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
+  }
+
+  // Rate limiting: 5 requests per minute per IP (first aid is less frequent)
+  const clientId = getClientIdentifier(req);
+  if (!checkRateLimit(clientId, 5, 60000)) {
+    console.log(`Rate limit exceeded for client: ${clientId}`);
+    return createRateLimitResponse(corsHeaders, 60);
   }
 
   try {
