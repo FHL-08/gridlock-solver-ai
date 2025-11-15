@@ -1,6 +1,16 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { checkRateLimit, getClientIdentifier, createRateLimitResponse } from '../_shared/rateLimit.ts'
+import { checkRateLimit, getClientIdentifier, createRateLimitResponse } from '../_shared/rateLimit.ts';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
+
+const triageSchema = z.object({
+  symptoms: z.string().min(1, "Symptoms are required").max(2000, "Symptoms must be less than 2000 characters"),
+  videoFilename: z.string().max(100, "Video filename too long").optional(),
+  conversationHistory: z.array(z.object({
+    role: z.string(),
+    content: z.string().max(1000, "Message content too long")
+  })).max(20, "Conversation history too long").optional().default([])
+});
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,7 +30,11 @@ serve(async (req) => {
   }
 
   try {
-    const { symptoms, videoFilename, conversationHistory = [] } = await req.json();
+    const requestBody = await req.json();
+    const validated = triageSchema.parse(requestBody);
+    const { symptoms, videoFilename, conversationHistory } = validated;
+    
+    console.log(`[Triage]: Processing request from ${clientId} - symptoms length: ${symptoms.length}`);
     
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
@@ -108,7 +122,18 @@ Respond in JSON format:
     });
 
   } catch (error) {
-    console.error('Error in triage-assessment:', error);
+    console.error(`[Triage]: Error from ${clientId}:`, error);
+    
+    if (error instanceof z.ZodError) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid input', details: error.errors }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+    
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
       JSON.stringify({ error: errorMessage }),

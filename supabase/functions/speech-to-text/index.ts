@@ -1,6 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { checkRateLimit, getClientIdentifier, createRateLimitResponse } from '../_shared/rateLimit.ts'
+import { checkRateLimit, getClientIdentifier, createRateLimitResponse } from '../_shared/rateLimit.ts';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
+
+const speechSchema = z.object({
+  audio: z.string().min(1, "Audio data is required").max(10485760, "Audio data too large (max 10MB base64)")
+});
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -50,7 +55,11 @@ serve(async (req) => {
   }
 
   try {
-    const { audio } = await req.json();
+    const requestBody = await req.json();
+    const validated = speechSchema.parse(requestBody);
+    const { audio } = validated;
+    
+    console.log(`[SpeechToText]: Request from ${clientId} - audio size: ${audio.length} bytes`);
     
     if (!audio) {
       throw new Error('No audio data provided');
@@ -96,7 +105,18 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('[SpeechToText]: Error:', error);
+    console.error(`[SpeechToText]: Error from ${clientId}:`, error);
+    
+    if (error instanceof z.ZodError) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid input', details: error.errors }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+    
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       {

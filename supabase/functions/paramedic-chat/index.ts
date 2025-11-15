@@ -1,5 +1,11 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { checkRateLimit, getClientIdentifier, createRateLimitResponse } from '../_shared/rateLimit.ts'
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
+
+const chatSchema = z.object({
+  message: z.string().min(1, "Message is required").max(1000, "Message must be less than 1000 characters"),
+  patientContext: z.string().max(2000, "Patient context too long").optional()
+})
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,7 +25,12 @@ serve(async (req) => {
   }
 
   try {
-    const { message, patientContext } = await req.json()
+    const requestBody = await req.json()
+    const validated = chatSchema.parse(requestBody)
+    const { message, patientContext } = validated
+    
+    console.log(`[Paramedic Chat]: Message from ${clientId} - length: ${message.length}`)
+    
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY')
 
     if (!LOVABLE_API_KEY) {
@@ -123,7 +134,18 @@ REMEMBER: You're a real person scared for someone's life, texting with paramedic
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
-    console.error('[ParamedicChat]: Error:', error)
+    console.error(`[Paramedic Chat]: Error from ${clientId}:`, error)
+    
+    if (error instanceof z.ZodError) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid input', details: error.errors }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+    
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       { 

@@ -1,5 +1,10 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { checkRateLimit, getClientIdentifier, createRateLimitResponse } from '../_shared/rateLimit.ts'
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
+
+const instructionsSchema = z.object({
+  symptoms: z.string().min(1, "Symptoms are required").max(2000, "Symptoms must be less than 2000 characters")
+})
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,7 +24,12 @@ serve(async (req) => {
   }
 
   try {
-    const { symptoms } = await req.json()
+    const requestBody = await req.json()
+    const validated = instructionsSchema.parse(requestBody)
+    const { symptoms } = validated
+    
+    console.log(`[First Aid]: Request from ${clientId} - symptoms length: ${symptoms.length}`)
+    
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY')
 
     if (!LOVABLE_API_KEY) {
@@ -69,7 +79,18 @@ CRITICAL RULES:
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
-    console.error('Error:', error)
+    console.error(`[First Aid]: Error from ${clientId}:`, error)
+    
+    if (error instanceof z.ZodError) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid input', details: error.errors }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+    
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       { 

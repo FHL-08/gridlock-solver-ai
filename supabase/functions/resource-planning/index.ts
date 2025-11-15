@@ -1,6 +1,20 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { checkRateLimit, getClientIdentifier, createRateLimitResponse } from '../_shared/rateLimit.ts'
+import { checkRateLimit, getClientIdentifier, createRateLimitResponse } from '../_shared/rateLimit.ts';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
+
+const resourceSchema = z.object({
+  patient: z.object({
+    severity: z.number().min(1).max(10),
+    symptoms: z.string().max(2000),
+    estimatedArrival: z.string().max(50)
+  }),
+  hospitalCapacity: z.object({
+    availableBeds: z.number().min(0),
+    erCapacity: z.number().min(0),
+    staffOnDuty: z.number().min(0)
+  })
+});
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
